@@ -1,0 +1,41 @@
+/**
+ * Brush update fragment shader for the paint mode.
+ *
+ * @param {uniform vec4} mouse
+ * @param {uniform vec2} resolution
+ * @param {uniform float} brushRadius
+ * @param {uniform float} targetAlpha the alpha value to saturate towards, typically 1.0 or 0.0
+ * @param {uniform sampler2D} mask
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+precision mediump float;
+#endif
+
+uniform vec4 mouse;
+uniform vec2 resolution;
+uniform float brushRadius;
+uniform float targetAlpha;
+uniform sampler2D mask;
+
+bool inRadius(vec2 point, vec2 midpoint, float radius) {
+  return (distance(midpoint, point) <= radius);
+}
+
+void main(void)
+{
+  vec2 tc = gl_FragCoord.xy / resolution.xy;
+  float orgAlpha = texture2D(mask, tc).r;
+  gl_FragColor = vec4(orgAlpha, 0, 0, 1.0);
+  
+  if (inRadius(gl_FragCoord.xy, mouse.xy, brushRadius)) {
+    vec2 mc = mouse.xy / resolution.xy;
+    vec2 midpoint = vec2(mc.x, mc.y);
+    float sqrtDistanceToCenter = pow(clamp((distance(gl_FragCoord.xy, mouse.xy) / brushRadius)+0.1, 0.0, 1.0), 0.7);
+    float proportionOfOrgAlpha = clamp(sqrtDistanceToCenter, 0.2, 1.0);
+    float newAlpha = mix(targetAlpha, orgAlpha, proportionOfOrgAlpha);
+    gl_FragColor = vec4(newAlpha, 0, 0, 1.0);
+  }
+}

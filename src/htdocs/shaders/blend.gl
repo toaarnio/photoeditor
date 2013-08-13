@@ -1,0 +1,29 @@
+/**
+ * Blending fragment shader. Blends the two given textures according
+ * to a separate blend mask texture.
+ *
+ * @param {uniform sampler2D} src the first source texture
+ * @param {uniform sampler2D} src2 the second source texture
+ * @param {uniform sampler2D} mask the mask texture for blending src & src2
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+precision mediump float;	// NB! "precision lowp" does not work on the N900!
+#endif
+
+uniform vec2 resolution;
+uniform sampler2D src;
+uniform sampler2D src2;
+uniform sampler2D mask;
+
+void main(void)
+{
+  vec2 tc = gl_FragCoord.xy / resolution.xy;
+  vec3 clr1 = texture2D(src, vec2(tc.x, tc.y)).rgb;
+  vec3 clr2 = texture2D(src2, vec2(tc.x, tc.y)).rgb;
+  float alpha = texture2D(mask, vec2(tc.x, tc.y)).r;
+  vec3 newColor = mix(clr1, clr2, alpha);
+  gl_FragColor = vec4(newColor, 1.0);
+}

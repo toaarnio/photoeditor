@@ -1,0 +1,40 @@
+/**
+ * Zooming fragment shader. Works the same way as 'zoomblend.gl', but
+ * without any blending.
+ *
+ * @param {uniform sampler2D} src the source texture
+ * @param {uniform vec4} resolution full resolution in .xy, thumbnail in .zw
+ * @param {uniform vec4} zoom the area of the texture to display, specified
+ *        as scale factors in zoom.xy and the bottom-left corner in zoom.zw
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+precision mediump float;
+
+uniform vec4 zoom;
+uniform vec4 resolution;
+uniform sampler2D src;
+
+void main(void)
+{
+  vec2 tc = gl_FragCoord.xy * zoom.xy + zoom.zw;
+
+  // When zoomed in far enough, display a thumbnail of the full image
+  // in the lower-left corner of the canvas.
+
+  bool inside = false;
+  if (gl_FragCoord.x < resolution.z && gl_FragCoord.y < resolution.w) {
+    vec2 zoomWindowSize = zoom.xy * resolution.xy;
+    vec2 zoomWindowLL = zoom.zw;
+    vec2 zoomWindowUR = zoomWindowLL + zoomWindowSize;
+    if (zoomWindowSize.x < 0.9 || zoomWindowSize.y < 0.9) {
+      tc = gl_FragCoord.xy / resolution.zw;
+      inside = all(bvec4(greaterThan(tc, zoomWindowLL), lessThan(tc, zoomWindowUR)));
+    }
+  } 
+
+  vec3 clr = texture2D(src, tc).rgb;
+  clr = inside ? vec3(1.0)-clr : clr;    // film negative style
+  gl_FragColor = vec4(clr, 1.0);
+}

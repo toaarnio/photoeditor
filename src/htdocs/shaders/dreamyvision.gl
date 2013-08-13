@@ -1,0 +1,43 @@
+/**
+ * "Dreamy Vision" post-process fragment shader.
+ * Adapted from Geeks3d.com Shader Library.
+ *
+ * @param {uniform vec2} resolution
+ * @param {uniform sampler2D} src
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+precision mediump float;	// NB! "precision lowp" does not work on the N900!
+#endif
+
+uniform vec2 resolution;
+uniform sampler2D src;
+uniform float alpha;		// "degree of fuzziness" in [0, 1]
+
+void main ()
+{
+  vec2 uv = gl_FragCoord.xy / resolution.xy;
+  vec4 c = texture2D(src, uv);
+
+  float distortion = alpha * 2.0;
+
+  c += texture2D(src, uv+0.001*distortion);
+  c += texture2D(src, uv+0.003*distortion);
+  c += texture2D(src, uv+0.005*distortion);
+  c += texture2D(src, uv+0.007*distortion);
+  c += texture2D(src, uv+0.009*distortion);
+
+  c += texture2D(src, uv-0.001*distortion);
+  c += texture2D(src, uv-0.003*distortion);
+  c += texture2D(src, uv-0.005*distortion);
+  c += texture2D(src, uv-0.007*distortion);
+  c += texture2D(src, uv-0.009*distortion);
+
+  // grayscale conversion & normalization to [0, 1]
+
+  vec3 grayscale = vec3(0.3/10.0, 0.59/10.0, 0.11/10.0);
+  float luminance = dot(c.rgb, grayscale);
+  gl_FragColor = vec4(luminance, luminance, luminance, 1.0);
+}

@@ -1,0 +1,37 @@
+/**
+ * Red eye removing shader. If the red component of a pixel dominates
+ * over green and blue, then the red component is reduced down to the
+ * minimum of green and blue.
+ *
+ * @param {uniform sampler2D} src the source texture
+ *
+ * @param {uniform vec2} resolution source texture size in pixels
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+precision mediump float;
+
+uniform sampler2D src;
+uniform vec2 resolution;
+
+const mat3 toHSV = mat3(0.299,  0.596,  0.211,
+                        0.587, -0.274, -0.523,
+                        0.114, -0.321,  0.311);
+
+const mat3 toRGB = mat3(1.000,  1.000,  1.000,
+                        0.956, -0.272, -1.107,
+                        0.621, -0.647,  1.705);
+
+void main(void)
+{
+  vec2 tc = gl_FragCoord.xy / resolution.xy;
+  vec3 color = texture2D(src, vec2(tc.x, tc.y)).rgb;
+
+  // Compute red intensity relative to green and blue; if red is
+  // dominating, then reduce it to the minimum of green and blue.
+
+  color.rgb = color.r > 0.5*(color.g+color.b) ? vec3(min(color.g, color.b)) : color.rgb;
+
+  gl_FragColor = vec4(color, 1.0);
+}

@@ -1,0 +1,72 @@
+/**
+ * Recolorizing fragment shader. Adjusts hue, saturation and lightness.
+ *
+ * @param {uniform sampler2D} src the source texture
+
+ * @param {uniform vec2} resolution source texture size in pixels
+
+ * @param {uniform vec3} hsv new values for hue, saturation and lightness:
+ * hue is given in [0, 2*pi] corresponding to a rotation of the color wheel;
+ * saturation is given in [0, 2], where 0.0 is grayscale and 1.0 is the original;
+ * lightness is also given in [0, 2], with 1.0 corresponding to the original.
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+precision mediump float;
+
+uniform sampler2D src;
+uniform vec2 resolution;
+uniform vec3 hsv;
+
+const mat3 toHSV = mat3(0.299,  0.596,  0.211,
+                        0.587, -0.274, -0.523,
+                        0.114, -0.321,  0.311);
+
+const mat3 toRGB = mat3(1.000,  1.000,  1.000,
+                        0.956, -0.272, -1.107,
+                        0.621, -0.647,  1.705);
+
+void main(void)
+{
+  vec2 tc = gl_FragCoord.xy / resolution.xy;
+  vec3 orgColor = texture2D(src, vec2(tc.x, tc.y)).rgb;
+
+  float hue = hsv.x;
+
+  // Adjust hue
+
+  float sinHue = sin(hue);
+  float cosHue = cos(hue);
+  mat3 rotateHue = mat3(1.0,     0.0,    0.0,
+                        0.0,  cosHue, sinHue,
+                        0.0, -sinHue, cosHue);
+
+  // Adjust saturation
+  
+  float sat = hsv.y;
+
+  mat3 saturate = mat3(1.0,  0.0,  0.0,
+                       0.0,  sat,  0.0,
+                       0.0,  0.0,  sat);
+
+  // Adjust lightness
+
+  float lit = hsv.z;
+
+  mat3 lighten = mat3(lit,  0.0,  0.0,
+                      0.0,  1.0,  0.0,
+                      0.0,  0.0,  1.0);
+
+
+  // Composite
+
+  vec3 rgb = toRGB * lighten * saturate * rotateHue * toHSV * orgColor;
+  gl_FragColor = vec4(rgb, 1.0);
+
+  // Simple desaturate
+  //float luminance = dot(vec3(0.2, 0.7, 0.1), orgColor);
+  //vec3 desaturatedColor = vec3(luminance);
+  //vec3 newColor = mix(orgColor, desaturatedColor, alpha);
+  //gl_FragColor = vec4(newColor, 1.0);
+}

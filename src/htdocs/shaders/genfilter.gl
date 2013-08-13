@@ -1,0 +1,41 @@
+/**
+ * A generic filter kernel with statically configurable size and
+ * dynamic weights.  The kernel size must be constant because WebGL
+ * does not permit arrays to be indexed with non-constant values.
+ *
+ * @param {uniform vec2} resolution
+ * @param {uniform sampler2D} src
+ * @param {uniform float[]} weights kernel weights in row-major order
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+  precision mediump float;
+#endif
+
+const int kernelWidth = 5;
+const int kernelHalfWidth = kernelWidth/2;
+const int kernelSize = kernelWidth * kernelWidth;
+
+uniform vec2 resolution;
+uniform sampler2D src;
+uniform float weights[kernelSize];
+
+void main(void)
+{
+  vec2 ooRes = vec2(1.0, 1.0) / resolution.xy;
+  vec2 uv = gl_FragCoord.xy * ooRes;            // center pixel coordinates
+  ooRes *= resolution.xy / 512.0;               // scale kernel sample locations according to image size
+
+  vec3 sum = vec3(0.0);
+  for (int y = -kernelHalfWidth; y <= kernelHalfWidth; y++) {
+    for (int x = -kernelHalfWidth; x <= kernelHalfWidth; x++) {
+      vec2 pixelOffset = vec2(float(x) * ooRes.x, float(y) * ooRes.y);
+      vec3 color = texture2D(src, uv + pixelOffset).rgb;
+      sum += color * weights[ (y+kernelHalfWidth)*kernelWidth + (x+kernelHalfWidth) ];
+    }
+  }
+
+  gl_FragColor.rgba = vec4(sum, 1.0);
+}

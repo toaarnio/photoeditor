@@ -1,0 +1,87 @@
+/**
+ * Zooming and blending fragment shader. Displays a selected area of a
+ * texture, blended with another texture according to a separate blend
+ * mask texture.
+ *
+ * The area to display is specified as a "zoom window", with scale
+ * factors and offsets in X and Y.  The scale factors are given in
+ * texture coordinates divided by texture width and height (this
+ * avoids a division in the fragment shader); the offsets are directly
+ * in texture coordinates.
+ *
+ * For example, to display the upper-left quadrant of the image, the X
+ * and Y scale factors would be 0.5/width and 0.5/height, and the
+ * offsets 0.0 for X and 0.5 for Y, where width and height are the
+ * dimensions of the source texture in pixels.
+ *
+ * @param {uniform sampler2D} src the first source texture
+ * @param {uniform sampler2D} src2 the second source texture
+ * @param {uniform sampler2D} mask the mask texture for blending src & src2
+ * @param {uniform vec4} resolution full resolution in .xy, thumbnail in .zw
+ * @param {uniform vec4} zoom the area of the texture to display, specified
+ *        as scale factors in zoom.xy and the bottom-left corner in zoom.zw
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+precision mediump float;
+#endif
+
+uniform vec4 zoom;
+uniform vec4 resolution;
+uniform sampler2D src;
+uniform sampler2D src2;
+uniform sampler2D mask;
+uniform bool invertMask;
+
+const mat3 toHSV = mat3(0.299,  0.596,  0.211,
+                        0.587, -0.274, -0.523,
+                        0.114, -0.321,  0.311);
+
+const mat3 toRGB = mat3(1.000,  1.000,  1.000,
+                        0.956, -0.272, -1.107,
+                        0.621, -0.647,  1.705);
+
+
+const mat3 saturate = mat3(1.0, 0.0, 0.0,
+                           0.0, 1.5, 0.0,
+                           0.0, 0.0, 1.5);
+
+const mat3 lighten = mat3(1.3, 0.0, 0.0,
+                          0.0, 1.0, 0.0,
+                          0.0, 0.0, 1.0);
+
+const mat3 rotHue180 = mat3(1.0,  0.0,  0.0,
+                            0.0, -1.0,  0.0,
+                            0.0,  0.0, -1.0);
+
+const mat3 toFalseColor = toRGB * lighten * rotHue180 * toHSV;
+
+void main(void)
+{
+
+  vec2 tc = gl_FragCoord.xy * zoom.xy + zoom.zw;
+
+  // When zoomed in far enough, display a thumbnail of the full image
+  // in the lower-left corner of the canvas.
+
+  bool inside = false;
+  if (gl_FragCoord.x < resolution.z && gl_FragCoord.y < resolution.w) {
+    vec2 zoomWindowSize = zoom.xy * resolution.xy;
+    vec2 zoomWindowLL = zoom.zw;
+    vec2 zoomWindowUR = zoomWindowLL + zoomWindowSize;
+    if (zoomWindowSize.x < 0.9 || zoomWindowSize.y < 0.9) {
+      tc = gl_FragCoord.xy / resolution.zw;
+      inside = all(bvec4(greaterThan(tc, zoomWindowLL), lessThan(tc, zoomWindowUR)));
+    }
+  } 
+
+  vec3 clr1 = texture2D(src, tc).rgb;
+  vec3 clr2 = texture2D(src2, tc).rgb;
+  float alpha = texture2D(mask, tc).r;
+  alpha = invertMask ? 1.0-alpha : alpha;
+  vec3 newColor = mix(clr1, clr2, alpha);
+  newColor = inside ? vec3(1.0)-newColor : newColor;   // film negative style
+  gl_FragColor = vec4(newColor, 1.0);
+}

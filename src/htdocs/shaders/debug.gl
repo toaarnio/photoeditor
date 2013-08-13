@@ -1,0 +1,28 @@
+/**
+ * A diagnostic fragment shader for debugging shared-related issues.
+ * Displays the source texture blended with a diagonal red gradient,
+ * such that the pixel at (1, 1) is pure red and the pixel at (0, 0)
+ * is the original texture color.
+ *
+ * @param {uniform vec2} resolution
+ * @param {uniform sampler2D} src
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+precision mediump float;	// NB! "precision lowp" does not work on the N900!
+#endif
+
+uniform vec2 resolution;
+uniform sampler2D src;
+
+void main(void)
+{
+  vec2 tc = gl_FragCoord.xy / resolution.xy;
+  vec3 texture = texture2D(src, vec2(tc.x, tc.y)).rgb;
+  vec3 red = vec3(1.0, 0.0, 0.0);
+  vec3 blended = mix(texture, red, (tc.x+tc.y)/2.0);
+
+  gl_FragColor = vec4(blended, 1.0);
+}

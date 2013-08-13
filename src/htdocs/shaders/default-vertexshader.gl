@@ -1,0 +1,15 @@
+/**
+ * Default vertex shader. Simply passes the given X, Y coordinates
+ * through to the fragment shader, leaving the Z coordinate zero.
+ *
+ * @param {uniform vec2} position
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+attribute vec2 position;
+
+void main()
+{
+	gl_Position = vec4(position, 0.0, 1.0);
+}

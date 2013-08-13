@@ -1,0 +1,21 @@
+/**
+ * Default fragment shader. Simply renders the given texture.
+ *
+ * @param {uniform vec2} resolution
+ * @param {uniform sampler2D} src
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+precision mediump float;	// NB! "precision lowp" does not work on the N900!
+#endif
+
+uniform vec2 resolution;
+uniform sampler2D src;
+
+void main(void)
+{
+  vec2 tc = gl_FragCoord.xy / resolution.xy;
+  gl_FragColor = texture2D(src, vec2(tc.x, tc.y)).rgba;
+}

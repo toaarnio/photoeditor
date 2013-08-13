@@ -1,0 +1,49 @@
+/**
+ * "Frosted Glass" post-process fragment shader.
+ *
+ * @param {uniform vec2} resolution
+ * @param {uniform sampler2D} src
+ * @param {uniform sampler2D} alpha
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+    precision mediump float;
+#endif
+
+uniform vec2 resolution;
+uniform sampler2D src;
+uniform float alpha;		// "distortion factor" in [0, 1]
+
+/**
+ * Generates a pseudo-random value in [0, 1] based on the given vec2
+ * input.  Grabbed from the internet, original author unknown.
+ */
+float rand(vec2 seed)
+{
+  return fract(sin(dot(seed.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+void main()
+{
+  vec2 uv = gl_FragCoord.xy / resolution.xy;
+  vec2 offset = vec2(0.0, 0.0);
+  vec2 seed = uv;
+  float iters = float(alpha*50.0);
+  for (int i=0; i < 50; i++) {
+
+    // Generate a random distortion in (X, Y)
+
+    vec2 distortion = 0.005 * (vec2(rand(seed.xy), rand(seed.yx)) - vec2(0.5, 0.5));
+
+    // Only apply the distortion if i <= bound. Ideally, we would
+    // just break out of the loop when i == iters, but that doesn't
+    // work with ANGLE.
+
+    float distortionFactor = clamp(iters-float(i), 0.0, 1.0);
+    offset +=  distortionFactor * distortion;
+    seed = offset;
+  }
+  gl_FragColor.rgb = texture2D(src, uv + offset).rgb;
+}

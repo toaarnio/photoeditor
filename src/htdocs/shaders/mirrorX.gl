@@ -1,0 +1,23 @@
+/**
+ * Mirroring fragment shader. Mirrors the source texture in the X axis.
+ *
+ * @param {uniform vec2} resolution
+ * @param {uniform sampler2D} src
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+precision mediump float;	// NB! "precision lowp" does not work on the N900!
+#endif
+
+uniform vec2 resolution;
+uniform sampler2D src;
+
+void main(void)
+{
+  vec2 tc = gl_FragCoord.xy / resolution.xy;
+  vec3 orgColor = texture2D(src, vec2(1.0-tc.x, tc.y)).rgb;
+
+  gl_FragColor = vec4(orgColor, 1.0);
+}

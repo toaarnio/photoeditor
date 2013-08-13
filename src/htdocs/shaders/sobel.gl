@@ -1,0 +1,70 @@
+/**
+ * "Edge Highlight" post-process fragment shader. In technical terms,
+ * this means a Sobel filtered image overlaid on the original image.
+ *
+ * @param {uniform vec2} resolution
+ * @param {uniform sampler2D} src
+ * @param {uniform float} threshold
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+  precision mediump float;
+#endif
+
+uniform vec2 resolution;
+uniform sampler2D src;
+uniform float threshold;
+
+void main(void)
+{
+  vec2 ooRes = vec2(1.0, 1.0) / resolution.xy;
+  vec2 uv = gl_FragCoord.xy * ooRes;
+
+  // 3x3 kernel
+
+  vec2 pixelOffset[9];
+  pixelOffset[0] = vec2(-ooRes.x, ooRes.y);
+  pixelOffset[1] = vec2(0.0, ooRes.y);
+  pixelOffset[2] = vec2(ooRes.x, ooRes.y);
+  pixelOffset[3] = vec2(-ooRes.x, 0.0);
+  pixelOffset[4] = vec2(0.0, 0.0);
+  pixelOffset[5] = vec2(ooRes.x, 0.0);
+  pixelOffset[6] = vec2(-ooRes.x, -ooRes.y);
+  pixelOffset[7] = vec2(0.00, -ooRes.y);
+  pixelOffset[8] = vec2(ooRes.x, -ooRes.y);
+
+  // sample[4], i.e. the center pixel, is not needed
+  // in sobel filtering, but we keep it for blending
+
+  vec3 samples[9];
+  for (int i=0; i < 9; i++) {
+    samples[i] = texture2D(src, uv + pixelOffset[i]).rgb;
+  }
+
+  //    -1 -2 -1        1 0 -1
+  // H = 0  0  0    V = 2 0 -2
+  //     1  2  1        1 0 -1
+
+  vec3 vertEdge = samples[2] + 2.0*samples[5] + samples[8] -
+    (samples[0] + 2.0*samples[3] + samples[6]);
+  vec3 horizEdge = samples[0] + 2.0*samples[1] + samples[2] -
+    (samples[6] + 2.0*samples[7] + samples[8]);
+
+  vec3 edgeColor = sqrt(horizEdge * horizEdge + 
+                        vertEdge * vertEdge);
+
+  float lum = dot(edgeColor, vec3(0.30, 0.55, 0.15));
+
+  // Overlay the detected edges on top of the original image
+  // using additive blending. Edge detection sensitivity can
+  // be adjusted using the uniform variable 'threshold'.
+
+  if (clamp(lum, 0.0, 1.0) <= threshold) {
+    gl_FragColor.rgba = vec4(samples[4], 1.0);
+  } else {
+    vec3 newEdgeColor = samples[4] + 0.5*edgeColor;
+    gl_FragColor.rgba = vec4(newEdgeColor, 1.0);
+  }
+}

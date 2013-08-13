@@ -1,0 +1,51 @@
+/**
+ * "Night Vision" post-process fragment shader.
+ *
+ * @param {uniform vec2} resolution
+ * @param {uniform sampler2D} src
+ * @param {uniform sampler2D} alpha
+ * @param {uniform sampler2D} random
+ *
+ * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ */
+
+#if defined(GL_ES)
+    precision mediump float;
+#endif
+
+uniform vec2 resolution;
+uniform sampler2D src;
+uniform float alpha;		// "color amplification factor"
+uniform float random;		// a random value in e.g. [-1, 1]
+
+/**
+ * Generates a pseudo-random value in [0, 1] based on the given vec2
+ * input.  Grabbed from the internet, original author unknown.
+ */
+float rand(vec2 seed)
+{
+  return fract(sin(dot(seed.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+void main()
+{
+  vec2 uv = gl_FragCoord.xy / resolution.xy;
+
+  // generate a random number from the fragment coordinates
+
+  float noise = rand(uv + random);
+
+  // increase texture distortion as a side-effect of color amplification
+
+  vec3 color = texture2D(src, uv + (noise-0.5)*0.01*alpha).rgb;
+
+  // amplify color in inverse proportion to original pixel brightness
+
+  float lum = dot(vec3(0.3, 0.59, 0.11), color);
+  color *= 1.0/(lum+1.0-alpha+0.1);
+
+  // sprinkle in some additive noise in proportion to color amplification
+
+  vec3 nightVisionColor = vec3(0.1, 0.95, 0.2);
+  gl_FragColor.rgb = (color + 0.2*noise*alpha) * nightVisionColor;
+}
