@@ -1,0 +1,77 @@
+TARGET_PATH = build
+SOURCE_PATH = src
+DOC_PATH = htdocs
+
+.PHONY: all debug
+
+HTDOCS:=$(shell (cd $(SOURCE_PATH) && find $(DOC_PATH) -type f ! -path *.svn* ! -path *.hg* ! -path *.git*))
+HTDOCS_DIRS:=$(shell (cd $(SOURCE_PATH) && find $(DOC_PATH) -type d ! -path *.svn* ! -path *.hg* ! -path *.git*))
+
+YUI:=java -jar tools/yuicompressor-2.4.2.jar
+
+HTMLCOMP=java -jar tools/htmlcompressor-0.9.1.jar --compress-css --compress-js -o $2 $1
+CSSCOMP=$(YUI) --type css -o $2 $1
+JSCOMP=$(YUI) --type js -o $2 $1
+
+LINT=java -jar tools/js.jar tools/jslint-check.js
+CSSVALID=java -jar tools/css-validator.jar -output gnu
+HTMLVALID=perl -Itools/lib/ tools/html-validate.pl
+
+debug : HTMLCOMP=cp $1 $2
+debug : CSSCOMP=cp $1 $2
+debug : JSCOMP=cp $1 $2
+
+all: deps.htdocs.mk $(addprefix $(TARGET_PATH)/,$(HTDOCS_DIRS)) $(addprefix $(TARGET_PATH)/,$(HTDOCS))
+
+$(addprefix $(TARGET_PATH)/,$(HTDOCS_DIRS)):
+	mkdir -p $@
+
+deps.htdocs.mk: $(addprefix $(SOURCE_PATH)/,$(HTDOCS_DIRS))
+	cd src && find htdocs -type f ! -path *.svn* ! -path *.hg* ! -path *.git* -exec echo "$(TARGET_PATH)/{}:" $(SOURCE_PATH)/{} \; > ../$@
+
+-include deps.htdocs.mk
+
+%.html:
+#	$(HTMLVALID) $<
+	$(call HTMLCOMP,$<,$@)
+
+$.min.css:
+	cp $< $@
+
+%.css:
+#	$(CSSVALID) file:$<
+	$(call CSSCOMP,$<,$@)
+
+%.min.js:
+	cp $< $@
+	
+%.js:
+	$(LINT) $<
+	$(call JSCOMP,$<,$@)
+
+%.gl:
+	cp $< $@
+
+%.cl:
+	cp $< $@
+
+%.jpg:
+	cp $< $@
+
+%.png:
+	cp $< $@
+
+%.raw:
+	cp $< $@
+
+%.yuv:
+	cp $< $@
+
+%:
+	@echo Unrecognized file type, ignoring $<
+
+debug: all
+
+clean:
+	-rm -rf $(TARGET_PATH)
+	-rm deps.htdocs.mk
