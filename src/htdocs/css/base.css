@@ -1,0 +1,162 @@
+body {
+    background-color: #E1E6FA;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+canvas {
+    display: block;
+    cursor: url("circle.png") 63.5 63.5, crosshair;
+}
+
+button.menu-button, label.menu-button {
+    width: 200px;
+    height: 58px;
+    margin: 0;
+}
+
+a.menu-button {
+    width: 198px;
+    height: 56px;
+    margin: 0;
+}
+
+a span.ui-button-text, label span.ui-button-text {
+    margin-top: 10px;
+}
+
+#menu {
+    width: 200px;
+    height: 100%;
+    margin-right: 10px;
+    padding: 0;
+    float:left;
+}
+
+#imageViewer {
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+}
+
+.thumbnail {
+    max-width: 600px;
+    max-height: 150px;
+}
+
+#imageViewer > img, #flickr-images > img, #picasa-images > img, #google-images > img, #instagram-images > img {
+    max-width: 600px;
+    max-height: 150px;
+
+    min-height: 50px;
+    min-width: 50px;
+
+    padding: 5px;
+    margin: 5px;
+    
+    background-color: white;
+    clear: both;
+    
+    box-shadow: 3px 3px 3px #666;
+}
+
+.shadow {
+    box-shadow: 3px 3px 3px #666;
+}
+
+.delete-image:hover {
+    background-color: #ff3333 !important;
+    box-shadow: 3px 3px 3px #f66 !important;
+}
+
+#container {
+    position: absolute;
+    width: auto;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    margin-right: 3px;
+    margin-left: 210px;
+    padding: 3px;
+}
+
+#attributeContainer {
+    position: absolute;
+    top: 5px;
+    left: 30px;
+    z-index: 10;
+    opacity: 0.6;
+}
+
+#attributeContainer:hover {
+    opacity: 0.85;
+}
+
+.ui-slider-horizontal {
+    height: 1.2em;
+    width: 530px;
+}
+
+.ui-slider-vertical {
+    width: 1.2em;
+    height: 400px;
+}
+
+.ui-slider-handle {
+    border: solid 1px #5C6F7D;
+}
+
+.ui-slider-horizontal > .ui-slider-handle {
+    height: 2.25em;
+    top: -0.6em;
+}
+
+.ui-slider-vertical > .ui-slider-handle {
+    width: 2.25em;
+    left: -0.6em;
+}
+
+.round {
+    border-radius:       5px;
+}
+
+.bigRound {
+    border-radius:       15px; 
+}
+
+#canvas2d, #canvas3d {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: none;
+}    
+
+.header {
+    margin-top: 0em;
+    padding: 1em;
+    text-align: left;
+    height: 30px;
+}
+
+.header-button-container {
+    float: right;
+    position: relative;
+    top: -5px;
+}
+
+#crop-container {
+    opacity: 0.5 !important;
+}
+
+#crop-container:hover {
+    opacity: 0.85 !important;
+}
+
+.crop-slider {
+    /*display: inline !important;*/
+    /*width: 200px;*/
+}
