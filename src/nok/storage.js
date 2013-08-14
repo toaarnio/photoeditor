@@ -1,9 +1,20 @@
-//
-//  storage
-//
-//  Created by Timo Reunanen on 2010-05-27.
-//  Copyright (c) 2010 Nokia Oy. All rights reserved.
-//
+/*
+ * This file is part of the Nokia WebCL project.
+ *
+ * This Source Code Form is subject to the terms of the
+ * Mozilla Public License, v. 2.0. If a copy of the MPL
+ * was not distributed with this file, You can obtain
+ * one at http://mozilla.org/MPL/2.0/.
+ *
+ * The Original Contributor of this Source Code Form is
+ * Nokia Research Tampere (http://webcl.nokiaresearch.com).
+ */
+
+/**
+ * Browser local storage.
+ *
+ * @author Timo Reunanen, 2010
+ */
 
 goog.require('goog.json');
 

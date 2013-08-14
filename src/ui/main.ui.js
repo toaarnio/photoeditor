@@ -1,8 +1,20 @@
+/*
+ * This file is part of the Nokia WebCL project.
+ *
+ * This Source Code Form is subject to the terms of the
+ * Mozilla Public License, v. 2.0. If a copy of the MPL
+ * was not distributed with this file, You can obtain
+ * one at http://mozilla.org/MPL/2.0/.
+ *
+ * The Original Contributor of this Source Code Form is
+ * Nokia Research Tampere (http://webcl.nokiaresearch.com).
+ */
+
 /**
  * Image editor browsing/selection window.
  *
  * @author Timo Reunanen, 2010
- * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ * @author Tomi Aarnio, 2011
  */
 
 goog.require('nokia.Storage');
