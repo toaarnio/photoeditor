@@ -43,9 +43,9 @@ goog.provide('nokia.cl');
 
   /**
    * Looks up the WebCL enum that has the given value.  For example,
-   * "nokia.cl.enum(-5)" will return "CL_OUT_OF_RESOURCES".
+   * "nokia.cl.enumToString(-5)" will return "CL_OUT_OF_RESOURCES".
    */
-  nokia.cl.enum = function (value) {
+  nokia.cl.enumToString = function (value) {
     for (var v in WebCL) {
       if (WebCL[v] === value) {
         return v;

@@ -1026,7 +1026,7 @@ nokia.glu = {
    * @param {HTMLCanvasElement} canvas the canvas element to get a WebGL
    * context from
    *
-   * @param {HTML[Image/Canvas]Element} image the image or canvas
+   * @param {HTMLImageElement/HTMLCanvasElement} image the image or canvas
    * to initialize GL textures from
    *
    * @return {WebGLRenderingContext} the WebGL context, or 'null' in
@@ -1088,8 +1088,7 @@ nokia.glu = {
    * Binds the given array of texture objects to the current
    * rendering context.
    * 
-   * @param {WebGLTexture[]} textures an array of WebGLTexture
-   * objects
+   * @param textures an array of WebGLTexture objects
    */
   bindTextures : function (textures) { 
     return nokia.gl.bindTextures(nokia.gl.context, textures); 

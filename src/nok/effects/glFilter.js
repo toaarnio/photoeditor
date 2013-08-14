@@ -54,7 +54,7 @@ goog.provide('nokia.effect.glFilter');
       min   : 0.000,
       max   : 1.000,
       value : threshold,
-      step  : 0.005,
+      step  : 0.005
     });
 
     var thresholdFunc = function (evt, ui) {

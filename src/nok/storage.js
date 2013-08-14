@@ -17,8 +17,7 @@ goog.provide('nokia.Storage');
 		'data/colorful.jpg',
 		'data/colorful-flowers.jpg',
 		'data/211617887_9b5ff5de3d.jpg',
-    'data/Kimono_1920x1080.png',
-    'data/raw_428x320.png',
+    'data/Kimono_1920x1080.png'
 	];
 
 	/**.

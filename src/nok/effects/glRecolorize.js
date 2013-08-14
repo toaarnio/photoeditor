@@ -64,14 +64,14 @@ goog.provide('nokia.effect.glRecolorize');
       min   : 0,
       max   : 2.0*3.14159,
       value : self.hue,
-      step  : 0.01,
+      step  : 0.01
     });
 
     var saturationButton = $.getMenu().addSliderAttribute('Saturation', {
       min   : 0,
       max   : 2,
       value : self.saturation,
-      step  : 0.01,
+      step  : 0.01
     });
 
     var hueFunc = function (evt, ui) {

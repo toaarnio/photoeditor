@@ -188,7 +188,7 @@ goog.require('nokia.Storage');
         'http://commondatastorage.googleapis.com/webcl/IMG_0011.JPG',
         'http://commondatastorage.googleapis.com/webcl/IMG_0031.JPG',
         'http://commondatastorage.googleapis.com/webcl/RedEyeTest3.jpg',
-        'http://commondatastorage.googleapis.com/webcl/RedEyeTest.jpg',
+        'http://commondatastorage.googleapis.com/webcl/RedEyeTest.jpg'
       ];
 
       for (var i in cloudImageURLs) {

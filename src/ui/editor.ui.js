@@ -838,7 +838,7 @@ goog.require('nokia.utils');
    * The new image is also stored into a GL texture that is used
    * as the primary image data source elsewhere in the editor.
    *
-   * @param {HTML[Image/Canvas]Element} newImage the new image
+   * @param {HTMLImageElement/HTMLCanvasElement} newImage the new image
    * or canvas
    */
   jQuery.updateCanvas = function (newImage) {

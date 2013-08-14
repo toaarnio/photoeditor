@@ -89,7 +89,7 @@ goog.provide('nokia.utils');
    * element does not exist or is empty; for example,
    * "kernels/myShader.gl"
    *
-   * @param {function} callback a function to call when the kernel
+   * @param {Function} callback a function to call when the kernel
    * source code has been successfully loaded.  The source code is
    * passed as an argument to this function.  If no function is
    * provided, the kernel is loaded synchronously.
