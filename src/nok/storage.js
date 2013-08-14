@@ -12,11 +12,7 @@ goog.provide('nokia.Storage');
 (function ($, nokia) {
 
 	var demoImages = [
-		'data/colorful-daisy-1-pattern.jpg',
-		'data/1-colorful-lorenzo-roberts.jpg',
-		'data/colorful.jpg',
 		'data/colorful-flowers.jpg',
-		'data/211617887_9b5ff5de3d.jpg',
     'data/Kimono_1920x1080.png'
 	];
 
