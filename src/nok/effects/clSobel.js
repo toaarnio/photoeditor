@@ -103,7 +103,7 @@ goog.provide('nokia.effect.clSobel');
 
     // Initialize WebCL buffers etc. to match the current image
     
-    var useTexturing = true;
+    var useTexturing = false;
     nokia.gl.drawDefault(nokia.gl.context, nokia.gl.textureOriginal);
     nokia.cl.setupImage(nokia.gl.canvas, useTexturing);
 

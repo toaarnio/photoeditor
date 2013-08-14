@@ -22,7 +22,6 @@
  * @author Tomi Aarnio, Nokia Research Tampere, 2011
  */
 
-#define USE_TEXTURING
 #ifdef USE_TEXTURING
 
 kernel void clSobel(read_only image2d_t src, __global uchar4* dst,
