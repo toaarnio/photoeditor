@@ -27,7 +27,7 @@ goog.provide('nokia.effect.glFrostedGlass');
 
   /************************
    *
-   *   CONSTRUCTOR
+   *   CLASS DEFINITION
    *
    ***********************/
 
@@ -43,6 +43,7 @@ goog.provide('nokia.effect.glFrostedGlass');
    *
    ***********************/
 
+  var ENABLED = true;
   var effectName = "Frosted Glass";
   var kernelURI = "shaders/frostedglass.gl";
   var self = nokia.effect.glFrostedGlass;
@@ -57,7 +58,7 @@ goog.provide('nokia.effect.glFrostedGlass');
    */
   self.prototype.init = function() {
 
-    console.log("glFrostedGlass init");
+    console.log(effectName + " init");
 
     var distortionButton = $.getMenu().addSliderAttribute('Distortion', {
       min:0,
@@ -66,28 +67,22 @@ goog.provide('nokia.effect.glFrostedGlass');
       step:0.01,
       slide: function (evt, ui) {
         self.apply(nokia.gl.context, ui.value);
-		    nokia.Effect.glPaint();
       }
     });
 
     // Preprocessing: Preprocessed image goes to
     // nokia.gl.textureFiltered a.k.a. "filtered".
 
-    self.glShaderFrostedGlass = nokia.gl.setupShaderProgram(nokia.gl.context, effectName);
+    self.shader = nokia.gl.setupShaderProgram(nokia.gl.context, effectName);
     self.apply(nokia.gl.context, 0.2);
-		nokia.Effect.glPaint();
 
     // Bring up the Distortion slider to give a hint to the user.
 
     distortionButton.click();
   };
 
-  /**
-   * uninit
-   */
-
   self.prototype.uninit = function() {
-	  console.log("glFrostedGlass uninit");
+    console.log(effectName + " uninit");
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////
@@ -100,7 +95,8 @@ goog.provide('nokia.effect.glFrostedGlass');
 		                 "alpha"      : alpha,
 		                 "src"        : nokia.gl.textureOriginal };
 
-	  nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.glShaderFrostedGlass, uniforms);
+	  nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.shader, uniforms);
+		nokia.Effect.glPaint();
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////
@@ -113,13 +109,13 @@ goog.provide('nokia.effect.glFrostedGlass');
    * because the WebGL context is not yet available.
    */
   
-  (function register() {
+  if (ENABLED) {
     var kernelSrc = nokia.utils.loadKernel("", kernelURI);
     var success = !!kernelSrc;
     if (success === true) {
       nokia.gl.fsSources[effectName] = kernelSrc;
       nokia.EffectManager.register(effectName, self);
     }
-  })();
+  }
 
 })(jQuery, nokia);

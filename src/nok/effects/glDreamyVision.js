@@ -25,27 +25,28 @@ goog.provide('nokia.effect.glDreamyVision');
 
 (function($, nokia) {
 
-  // ====================
-  // = Global variables =
-  // ====================
+  /************************
+   *
+   *   CLASS DEFINITION
+   *
+   ***********************/
 
-  var self;
-
-  // ===============
-  // = Constructor =
-  // ===============
-
-  /**
-   * Effect constructor, called upon entering the 'Effects'
-   * menu.  At this point, the image to be edited is already
-   * known.
-   */
   nokia.effect.glDreamyVision = function () {
     nokia.Effect.call(this);
-    self = this;
-    console.log('glDreamyVision constructor.');
   };
+    
   goog.inherits(nokia.effect.glDreamyVision, nokia.Effect);
+  
+  /************************
+   *
+   *   GLOBAL VARIABLES
+   *
+   ***********************/
+
+  var ENABLED = true;
+  var effectName = "Dreamy Vision";
+  var kernelURI = "shaders/dreamyvision.gl";
+  var self = nokia.effect.glDreamyVision;
 
   /**
    * Effect initializer, called upon selecting the effect on
@@ -55,9 +56,9 @@ goog.provide('nokia.effect.glDreamyVision');
    * opportunity to do full-frame preprocessing on the source
    * image.
    */
-  nokia.effect.glDreamyVision.prototype.init = function() {
+  self.prototype.init = function() {
 
-    console.log("glDreamyVision init");
+    console.log(effectName + " init");
 
     var fuzzinessButton = $.getMenu().addSliderAttribute('Fuzziness', {
       min:0,
@@ -65,48 +66,58 @@ goog.provide('nokia.effect.glDreamyVision');
       value:1,
       step:0.01,
       slide: function (evt, ui) {
-        nokia.effect.glDreamyVision.preprocess(nokia.gl.context, ui.value);
-		    nokia.Effect.glPaint();
+        self.apply(nokia.gl.context, ui.value);
       }
     });
 
     // Preprocessing: Preprocessed image goes to
     // nokia.gl.textureFiltered a.k.a. "filtered".
 
-    self.glShaderDreamyVision = nokia.gl.setupShaderProgram(nokia.gl.context, "dreamyvision");
-    nokia.effect.glDreamyVision.preprocess(nokia.gl.context, 1.0);
-    nokia.Effect.glPaint();
+    self.shader = nokia.gl.setupShaderProgram(nokia.gl.context, effectName);
+    self.apply(nokia.gl.context, 1.0);
 
     // Bring up the Fuzziness slider to give a hint to the user
 
     fuzzinessButton.click();
   };
 
-  /**
-   * uninit
-   */
-
-  nokia.effect.glDreamyVision.prototype.uninit = function() {
-	  console.log("glDreamyVision uninit");
+  self.prototype.uninit = function() {
+    console.log(effectName + " uninit");
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////
   // WebGL drawing code
   //
 
-  nokia.effect.glDreamyVision.preprocess = function (gl, alpha) {
-    console.log("nokia.effect.glDreamyVision.preprocess");
+  self.apply = function (gl, alpha) {
+
+    console.log(effectName + " apply");
 
 	  var uniforms = { "resolution" : [nokia.gl.width, nokia.gl.height], 
 		                 "alpha"      : alpha,
 		                 "src"        : nokia.gl.textureOriginal };
 
-	  nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.glShaderDreamyVision, uniforms);
+	  nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.shader, uniforms);
+    nokia.Effect.glPaint();
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////
   // Effect registration
   //
-  nokia.EffectManager.register('Dreamy Vision', nokia.effect.glDreamyVision);
+
+  /**
+   * Loads the shader source, and if all goes well, registers the
+   * effect. Note that the shader can't be compiled at this stage,
+   * because the WebGL context is not yet available.
+   */
+  
+  if (ENABLED) {
+    var kernelSrc = nokia.utils.loadKernel("", kernelURI);
+    var success = !!kernelSrc;
+    if (success === true) {
+      nokia.gl.fsSources[effectName] = kernelSrc;
+      nokia.EffectManager.register(effectName, self);
+    }
+  }
 
 })(jQuery, nokia);

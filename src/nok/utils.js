@@ -13,7 +13,7 @@
 /**
  * Common helper functions that have no dependencies on WebGL or WebCL.
  *
- * @author Tomi Aarnio
+ * @author Tomi Aarnio, 2010-
  */
 
 goog.provide('nokia.utils');
@@ -155,7 +155,7 @@ goog.provide('nokia.utils');
 
   nokia.utils.XMLHttpRequestGet = function (uri) {
     //var mHttpReq = new XMLHttpRequest();
-    mHttpReq.open("GET", uri, false);
+    mHttpReq.open("GET", uri + "?id="+ Math.random(), false);
     mHttpReq.send(null);
     return (mHttpReq.status == 200) ? mHttpReq.responseText : null;
   };

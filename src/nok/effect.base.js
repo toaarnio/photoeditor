@@ -13,7 +13,7 @@
 /**
  * Effect base class
  *
- * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ * @author Tomi Aarnio, 2010-
  */
 
 goog.provide('nokia.Effect');
@@ -42,6 +42,9 @@ goog.provide('nokia.EffectManager');
 
     // Set up global variables (must be done before rendering)
 
+    self.screenWidth = $.getCanvasObject().width();
+    self.screenHeight = $.getCanvasObject().height();
+
     $.zoomAspectRatio = nokia.gl.width / nokia.gl.height;
     $.zoomWidth = nokia.gl.width;
     $.zoomHeight = nokia.gl.height;
@@ -51,13 +54,15 @@ goog.provide('nokia.EffectManager');
     $.zoomBottomLeftY = 0;
     $.zoomRatio = $.zoomWidth / nokia.gl.width;
 
-    $.brushRadiusNominal = Math.min(nokia.gl.width, nokia.gl.height) / 10;
+    // Brush radius is specified in image pixels (not screen pixels).
+    // We use a default brush radius of 63.5 pixels due to our custom
+    // CSS3 cursor (which we unfortunately can't resize (TODO)).
+
+    $.brushRadiusNominal = 63.5 / (self.screenWidth / nokia.gl.width);
     $.brushRadius = $.brushRadiusNominal;
     $.brushTargetAlpha = 1.0;
     $.invertMaskTexture = false;
 
-    self.screenWidth = $.getCanvasObject().width();
-    self.screenHeight = $.getCanvasObject().height();
     self.redraw = false;
 
     // Call the effect's own initializer first
@@ -153,19 +158,21 @@ goog.provide('nokia.EffectManager');
     var sliderContainer = nokia.Effect.zoomButton.data("attributeContainer").children();
     sliderContainer.bind("slide", zoomSliderFunc);
 
-    // Brush Size
+    // Brush Size (disabled until we find a way to resize the brush cursor)
 
-    $.getMenu().addSliderAttribute('Brush Size', {
-      min   : 2,
-      max   : $.brushRadiusNominal * 2.5,
-      value : $.brushRadiusNominal,
-      step  : 2,
-      range : 'min',
-      slide : function (evt, ui) {
-        $.brushRadiusNominal = ui.value;
-        $.brushRadius = ui.value * $.zoomRatio;
-      }
-    });
+    if (false) {
+      $.getMenu().addSliderAttribute('Brush Size', {
+        min   : 2,
+        max   : $.brushRadiusNominal * 2.5,
+        value : $.brushRadiusNominal,
+        step  : 2,
+        range : 'min',
+        slide : function (evt, ui) {
+          $.brushRadiusNominal = ui.value;
+          $.brushRadius = ui.value * $.zoomRatio;
+        }
+      });
+    }
 
     // Invert Brush -- inverts the brush so that it paints "back in"
 
@@ -200,12 +207,16 @@ goog.provide('nokia.EffectManager');
     });
 
     // Undo -- clear the paint mask, then redraw and continue as usual
+    //
+    // Disabled until we can do this more fine-grained.
 
-    $.getMenu().addMenuButton('Undo').click(function() {
-      console.log("'Undo' pressed");
-      glu.clearTexture(nokia.gl.textureBrushMask);
-      nokia.Effect.glPaint();
-    }).button('option', 'icons', {primary: 'ui-icon-circle-close'});
+    if (false) {
+      $.getMenu().addMenuButton('Undo').click(function() {
+        console.log("'Undo' pressed");
+        glu.clearTexture(nokia.gl.textureBrushMask);
+        nokia.Effect.glPaint();
+      }).button('option', 'icons', {primary: 'ui-icon-circle-close'});
+    }
 
     // Cancel -- discard the result texture, return to the Effects menu
 
@@ -349,9 +360,13 @@ goog.provide('nokia.EffectManager');
                         uniforms);
   };
 
+  /**
+   * Renders the currently selected rectangular area of the image to
+   * the GL framebuffer with processing and masking applied. In other
+   * words, 'textureOriginal' is blended with 'textureFiltered' using
+   * alpha values from 'textureBrushMask'.
+   */
   nokia.Effect.glPaint = function() {
-
-    //console.log("glPaint()");
 
     // Derive zoom window bottom left coordinates from the given
     // center coordinates, making sure that the zoom window does

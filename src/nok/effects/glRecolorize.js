@@ -25,28 +25,28 @@ goog.provide('nokia.effect.glRecolorize');
 
 (function($, nokia) {
 
-  // ====================
-  // = Global variables =
-  // ====================
+  /************************
+   *
+   *   CLASS DEFINITION
+   *
+   ***********************/
 
-  var self;
-
-  // ===============
-  // = Constructor =
-  // ===============
-
-  /**
-   * Effect constructor, called upon entering the 'Effects'
-   * menu.  At this point, the image to be edited is already
-   * known.
-   */
   nokia.effect.glRecolorize = function () {
     nokia.Effect.call(this);
-    self = this;
-    console.log('glRecolorize constructor.');
   };
 
   goog.inherits(nokia.effect.glRecolorize, nokia.Effect);
+
+  /************************
+   *
+   *   GLOBAL VARIABLES
+   *
+   ***********************/
+
+  var ENABLED = true;
+  var effectName = "Recolorize";
+  var kernelURI = "shaders/recolorize.gl";
+  var self = nokia.effect.glRecolorize;
 
   /**
    * The Effect initializer, called upon clicking 'Recolorize' on the
@@ -56,21 +56,15 @@ goog.provide('nokia.effect.glRecolorize');
    * class.  This is also a good opportunity to do full-framqe
    * preprocessing on the source image.
    */
-  nokia.effect.glRecolorize.prototype.init = function() {
+  self.prototype.init = function() {
 
-    console.log("glRecolorize init");
-
-    // Preprocessed image goes to nokia.gl.textureFiltered
+    console.log(effectName + " init");
 
     self.hue = 0.5*3.14159;
     self.saturation = 1.0;
     self.lightness = 1.0;
 
-    // Set up the WebGL shader
-    
-    self.glShaderRecolorize = nokia.gl.setupShaderProgram(nokia.gl.context, "recolorize");
-
-    // Set up effect-specific buttons and sliders
+    self.shader = nokia.gl.setupShaderProgram(nokia.gl.context, effectName);
 
     var hueButton = $.getMenu().addSliderAttribute('Hue', {
       min   : 0,
@@ -88,55 +82,65 @@ goog.provide('nokia.effect.glRecolorize');
 
     var hueFunc = function (evt, ui) {
       self.hue = ui.value;
-      nokia.effect.glRecolorize.preprocess(nokia.gl.context, self.hue, self.saturation, self.lightness);
-      nokia.Effect.glPaint();
+      self.apply(nokia.gl.context, self.hue, self.saturation, self.lightness);
     };
 
     var saturationFunc = function (evt, ui) {
       self.saturation = ui.value;
-      nokia.effect.glRecolorize.preprocess(nokia.gl.context, self.hue, self.saturation, self.lightness);
-      nokia.Effect.glPaint();
+      self.apply(nokia.gl.context, self.hue, self.saturation, self.lightness);
     };
 
-    // Measure preprocessing speed
+    // Preprocess & measure speed
 
     nokia.utils.Timer.start("Recolorize");
-    nokia.effect.glRecolorize.preprocess(nokia.gl.context, self.hue, self.saturation, self.lightness);
-    nokia.gl.context.finish();
+    self.apply(nokia.gl.context, self.hue, self.saturation, self.lightness);
     var isInteractiveSpeed = nokia.utils.Timer.elapsed("Recolorize", true) < 20 ? true : false;
     var hueSliderContainer = hueButton.data("attributeContainer").children();
     hueSliderContainer.bind(isInteractiveSpeed? "slide" : "slidechange", hueFunc);
     var saturationSliderContainer = saturationButton.data("attributeContainer").children();
     saturationSliderContainer.bind(isInteractiveSpeed? "slide" : "slidechange", saturationFunc);
 
-    // Bring up the hue adjustment slider
+    // Bring up the Hue adjustment slider
 
     hueButton.click();
   };
 
-  /**
-   * uninit
-   */
-  nokia.effect.glRecolorize.prototype.uninit = function() {
-    console.log("glRecolorize uninit");
+  self.prototype.uninit = function() {
+    console.log(effectName + " uninit");
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////
   // WebGL drawing code
   //
-  nokia.effect.glRecolorize.preprocess = function (gl, hue, saturation, lightness) {
-    console.log("nokia.effect.glRecolorize.preprocess: ", hue, saturation, lightness);
+  self.apply = function (gl, hue, saturation, lightness) {
+
+    console.log(effectName + " apply");
 
     var uniforms = { "resolution" : [nokia.gl.width, nokia.gl.height], 
                      "src"  : nokia.gl.textureOriginal,
                      "hsv"  : [hue, saturation, lightness] };
 
-    nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.glShaderRecolorize, uniforms);
+    nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.shader, uniforms);
+    nokia.Effect.glPaint();
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////
   // Effect registration
   //
-  nokia.EffectManager.register('Recolorize', nokia.effect.glRecolorize);
+
+  /**
+   * Loads the shader source, and if all goes well, registers the
+   * effect. Note that the shader can't be compiled at this stage,
+   * because the WebGL context is not yet available.
+   */
+  
+  if (ENABLED) {
+    var kernelSrc = nokia.utils.loadKernel("", kernelURI);
+    var success = !!kernelSrc;
+    if (success === true) {
+      nokia.gl.fsSources[effectName] = kernelSrc;
+      nokia.EffectManager.register(effectName, self);
+    }
+  }
 
 })(jQuery, nokia);

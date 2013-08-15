@@ -14,7 +14,7 @@
  * Common interface to Picasa and Flickr public photo feeds.  Adding
  * Twitpic and similar other services is probably trivial.
  *
- * @author Tomi Aarnio, 2011
+ * @author Tomi Aarnio, 2011-
  */
 
 (function ($) {
@@ -136,13 +136,13 @@
     var photoList = services[serviceName].imageURLs;
     var useCORS = services[serviceName].supportsCORS && browserSupportsCORS;
     
-    $.each(photoList, function (idx, item) {
+    $.each(photoList, function (idx, imageURL) {
 
       var img = $('<img>');
       img.css({ cursor:'pointer' });
       if (useCORS) img.attr('crossorigin', 'anonymous'); 
       img.appendTo(targetSection);
-      img.attr('src', item);
+      img.attr('src', imageURL);
 
       img.mousedown(function () {
         return false;
@@ -160,7 +160,7 @@
 
         if (useCORS == false) {
           $.getJSON('http://webcl.nokiaresearch.com/photoeditor/cgi/getImage.py?callback=?',
-                    { url : item },
+                    { url : imageURL },
                     function(json) {
                       $.loadImageFromURL(json.data);
                       $.getContainer().data('image-name', serviceName + '_' + goog.now());

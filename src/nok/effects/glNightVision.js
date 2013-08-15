@@ -25,30 +25,28 @@ goog.provide('nokia.effect.glNightVision');
 
 (function($, nokia) {
 
-  // ====================
-  // = Global variables =
-  // ====================
+  /************************
+   *
+   *   CLASS DEFINITION
+   *
+   ***********************/
 
-  var self;
-
-  // ===============
-  // = Constructor =
-  // ===============
-  
-  /**
-   * Effect constructor, called upon entering the 'Effects'
-   * menu.  At this point, the image to be edited is already
-   * known.
-   */
   nokia.effect.glNightVision = function () {
     nokia.Effect.call(this);
-
-    self = this;
-
-    console.log('glNightVision constructor.');
-
   };
+
   goog.inherits(nokia.effect.glNightVision, nokia.Effect);
+
+  /************************
+   *
+   *   GLOBAL VARIABLES
+   *
+   ***********************/
+
+  var ENABLED = true;
+  var effectName = "Night Vision";
+  var kernelURI = "shaders/nightvision.gl";
+  var self = nokia.effect.glNightVision;
 
   /**
    * Effect initializer, called upon selecting the effect on
@@ -58,9 +56,9 @@ goog.provide('nokia.effect.glNightVision');
    * opportunity to do full-frame preprocessing on the source
    * image.
    */
-  nokia.effect.glNightVision.prototype.init = function() {
+  self.prototype.init = function() {
 
-    console.log("glNightVision init");
+    console.log(effectName + " init");
 
     var ampButton = $.getMenu().addSliderAttribute('Amplification', {
       min:0,
@@ -68,37 +66,32 @@ goog.provide('nokia.effect.glNightVision');
       value:0.5,
       step:0.01,
       slide: function (evt, ui) {
-        nokia.effect.glNightVision.apply(nokia.gl.context, ui.value);
-		    nokia.Effect.glPaint();
+        self.apply(nokia.gl.context, ui.value);
       }
     });
     
     // Preprocessing: Preprocessed image goes to
     // nokia.gl.textureFiltered a.k.a. "filtered".
 
-    self.glShaderNightVision = nokia.gl.setupShaderProgram(nokia.gl.context, "nightvision");
-    nokia.effect.glNightVision.apply(nokia.gl.context, 0.5);
-    nokia.Effect.glPaint();
+    self.shader = nokia.gl.setupShaderProgram(nokia.gl.context, effectName);
+    self.apply(nokia.gl.context, 0.5);
 
     // Bring up the Amplification slider to give a hint to the user
 
     ampButton.click();
   };
 
-  /**
-   * uninit
-   */
-
-  nokia.effect.glNightVision.prototype.uninit = function() {
-	  console.log("glNightVision uninit");
+  self.prototype.uninit = function() {
+    console.log(effectName + " uninit");
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////
   // WebGL drawing code
   //
 
-  nokia.effect.glNightVision.apply = function (gl, alpha) {
-    console.log("nokia.effect.glNightVision.apply");
+  self.apply = function (gl, alpha) {
+
+    console.log(effectName + " apply");
 
 	  var time = ((new Date().getTime() % 500) / 250) - 1;
     
@@ -107,12 +100,27 @@ goog.provide('nokia.effect.glNightVision');
 			               "random"     : time,
 		                 "src"        : nokia.gl.textureOriginal };
 
-	  nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.glShaderNightVision, uniforms);
+	  nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.shader, uniforms);
+    nokia.Effect.glPaint();
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////
   // Effect registration
   //
-  nokia.EffectManager.register('Night Vision', nokia.effect.glNightVision);
+
+  /**
+   * Loads the shader source, and if all goes well, registers the
+   * effect. Note that the shader can't be compiled at this stage,
+   * because the WebGL context is not yet available.
+   */
+  
+  if (ENABLED) {
+    var kernelSrc = nokia.utils.loadKernel("", kernelURI);
+    var success = !!kernelSrc;
+    if (success === true) {
+      nokia.gl.fsSources[effectName] = kernelSrc;
+      nokia.EffectManager.register(effectName, self);
+    }
+  }
 
 })(jQuery, nokia);

@@ -28,7 +28,7 @@ goog.provide('nokia.effect.glFilter');
 
   /************************
    *
-   *   CONSTRUCTOR
+   *   CLASS DEFINITION
    *
    ***********************/
 
@@ -44,6 +44,7 @@ goog.provide('nokia.effect.glFilter');
    *
    ***********************/
 
+  var ENABLED = true;
   var effectName = "Sharpen / Blur";
   var kernelURI = "shaders/genfilter.gl";
   var self = nokia.effect.glFilter;
@@ -58,9 +59,9 @@ goog.provide('nokia.effect.glFilter');
    */
   self.prototype.init = function() {
 
-    console.log("glFilter init");
+    console.log(effectName + " init");
 
-    var threshold = 0.2;  // default value
+    var threshold = 0.2;
 
     var thresholdButton = $.getMenu().addSliderAttribute('Blurriness', {
       min   : 0.000,
@@ -71,12 +72,11 @@ goog.provide('nokia.effect.glFilter');
 
     var thresholdFunc = function (evt, ui) {
       self.apply(nokia.gl.context, ui.value);
-      nokia.Effect.glPaint();
     };
 
     // Set up WebGL shaders
 
-    self.glShaderFilter = nokia.gl.setupShaderProgram(nokia.gl.context, effectName);
+    self.shader = nokia.gl.setupShaderProgram(nokia.gl.context, effectName);
 
     // Preprocessing: The result goes to nokia.gl.textureFiltered
 
@@ -92,12 +92,8 @@ goog.provide('nokia.effect.glFilter');
     thresholdButton.click();
   };
 
-  /**
-   * uninit
-   */
-
   self.prototype.uninit = function() {
-	  console.log("glFilter uninit");
+    console.log(effectName + " uninit");
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////
@@ -151,7 +147,8 @@ goog.provide('nokia.effect.glFilter');
       }
     }
 
-	  nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.glShaderFilter, uniforms);
+	  nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.shader, uniforms);
+    nokia.Effect.glPaint();
   };
 
   self.gaussian = function (x, y, stddev) {
@@ -170,13 +167,13 @@ goog.provide('nokia.effect.glFilter');
    * because the WebGL context is not yet available.
    */
   
-  (function register() {
+  if (ENABLED) {
     var kernelSrc = nokia.utils.loadKernel("", kernelURI);
     var success = !!kernelSrc;
     if (success === true) {
       nokia.gl.fsSources[effectName] = kernelSrc;
       nokia.EffectManager.register(effectName, self);
     }
-  })();
+  }
 
 })(jQuery, nokia);

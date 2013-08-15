@@ -45,6 +45,7 @@ goog.provide('nokia.effect.clSobel');
    *
    ***********************/
 
+  var ENABLED = true;
   var effectName = "Edge Detect";
   var kernelName = "clSobel";
   var kernelURI = "shaders/sobel.cl";
@@ -57,7 +58,9 @@ goog.provide('nokia.effect.clSobel');
    */
   self.prototype.init = function() {
 
-    self.threshold = 0.5;  // default value
+    console.log(effectName + " init");
+
+    self.threshold = 0.5;
 
     var thresholdButton = $.getMenu().addSliderAttribute('Threshold', {
       min   : 0.01,
@@ -68,36 +71,31 @@ goog.provide('nokia.effect.clSobel');
 
     var thresholdFunc = function (evt, ui) {
       self.threshold = ui.value;
-      self.prototype.apply(nokia.gl.textureFiltered, ui.value);
-      nokia.Effect.glPaint();
+      self.apply(nokia.gl.textureFiltered, ui.value);
     };
 
-    self.prototype.initCL(nokia.cl.ctxIndex);
+    self.initCL(nokia.cl.ctxIndex);
 
     // Sobel filtering: The result goes to nokia.gl.textureFiltered.
     // Also bring up the slider to give the user a hint that it can be
     // adjusted.
 
     nokia.utils.Timer.start("Sobel");
-    self.prototype.apply(nokia.gl.textureFiltered, self.threshold);
+    self.apply(nokia.gl.textureFiltered, self.threshold);
     var isInteractiveSpeed = nokia.utils.Timer.elapsed("Sobel") < 20 ? true : false;
     var sliderContainer = thresholdButton.data("attributeContainer").children();
     sliderContainer.bind(isInteractiveSpeed? "slide" : "slidechange", thresholdFunc);
-    nokia.Effect.glPaint();
     thresholdButton.click();
   };
 
-  /**
-   * Uninitializes the Sobel Effect
-   */
   self.prototype.uninit = function() {
-    console.log("clSobel uninit");
+    console.log(effectName + " uninit");
   };
 
   /**
    * Initializes the given CL context for this Effect.
    */
-  self.prototype.initCL = function(clCtxIndex) {
+  self.initCL = function(clCtxIndex) {
 
     nokia.cl.selectContext(clCtxIndex);
 
@@ -117,7 +115,7 @@ goog.provide('nokia.effect.clSobel');
    * Applies the Sobel filter on the current image, storing the result
    * in the given GL texture.
    */
-  self.prototype.apply = function(dstTexture, threshold) {
+  self.apply = function(dstTexture, threshold) {
 
     threshold = threshold || self.threshold;
 
@@ -133,6 +131,7 @@ goog.provide('nokia.effect.clSobel');
     nokia.cl.runKernel(kernel, dynamicArgs);
 
     nokia.cl.texImage2D(dstTexture);
+    nokia.Effect.glPaint();
   };
 
   /**
@@ -141,12 +140,12 @@ goog.provide('nokia.effect.clSobel');
    * This function is executed only once, at the time of loading
    * this script file.
    */
-  
-  (function register() {
+
+  if (ENABLED) {
     var success = nokia.cl.setupKernel(kernelURI);
     if (success === true) {
       nokia.EffectManager.register(effectName, self);
     }
-  })();
+  }
 
 })(jQuery);

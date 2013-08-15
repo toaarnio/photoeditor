@@ -14,7 +14,7 @@
  * Image editor browsing/selection window.
  *
  * @author Timo Reunanen, 2010
- * @author Tomi Aarnio, 2011
+ * @author Tomi Aarnio, 2010-
  */
 
 goog.require('nokia.Storage');
@@ -115,27 +115,31 @@ goog.require('nokia.Storage');
       });
     });
     
-    var demoBtn = $('<button/>');
-    demoBtn.text('Sample Images');
-    demoBtn.button();
-    demoBtn.appendTo(btnContainer);
+    if (false) {
+      var demoBtn = $('<button/>');
+      demoBtn.text('Sample Images');
+      demoBtn.button();
+      demoBtn.appendTo(btnContainer);
     
-    demoBtn.click(function() {
-      nokia.Storage.loadDemoData();
-      $.mainWindow();
-    });
-
-    var clearBtn = $('<buttons/>');
-    clearBtn.text('Clear');
-    clearBtn.button();
-    clearBtn.appendTo(btnContainer);
-
-    clearBtn.click(function() {
-      if (confirm("Really remove all images?")) {
-        nokia.Storage.clear();
+      demoBtn.click(function() {
+        nokia.Storage.loadDemoData();
         $.mainWindow();
-      }
-    });
+      });
+    }
+
+    if (false) {
+      var clearBtn = $('<buttons/>');
+      clearBtn.text('Clear');
+      clearBtn.button();
+      clearBtn.appendTo(btnContainer);
+
+      clearBtn.click(function() {
+        if (confirm("Really remove all images?")) {
+          nokia.Storage.clear();
+          $.mainWindow();
+        }
+      });
+    }
 
     var removeBtn = btnContainer.addToggleButton('Remove').id('delete-image-button');
 
@@ -181,7 +185,7 @@ goog.require('nokia.Storage');
 
     var googleHdr = $('<div/>')
       .addClass('header ui-widget-header ui-widget')
-      .appendTo('#imageViewer')
+    //.appendTo('#imageViewer')
       .text('Cloud Storage');
 
     var googleBtnContainer = $('<div/>')
@@ -189,7 +193,7 @@ goog.require('nokia.Storage');
       .appendTo(googleHdr);
 
     var googleSearchBtn = $('<button/>');
-    googleSearchBtn.text('Show');
+    googleSearchBtn.text('Refresh');
     googleSearchBtn.button();
     googleSearchBtn.appendTo(googleBtnContainer);
     googleSearchBtn.click(function() {
@@ -241,6 +245,7 @@ goog.require('nokia.Storage');
       .appendTo(picasaHdr);
 
     var picasaTagInput = $('<input>');
+    picasaTagInput.val('');
     picasaTagInput.appendTo(picasaBtnContainer);
     picasaTagInput.css('margin-right','1em');
     picasaTagInput.keydown(function (evt) {
@@ -250,7 +255,7 @@ goog.require('nokia.Storage');
     });
   
     var picasaSearchBtn = $('<button/>');
-    picasaSearchBtn.text('Show');
+    picasaSearchBtn.text('Refresh');
     picasaSearchBtn.button();
     picasaSearchBtn.appendTo(picasaBtnContainer);
     picasaSearchBtn.click(function() {
@@ -261,28 +266,27 @@ goog.require('nokia.Storage');
         picasaOptions.tag = picasaTag;
       }
       $.updatePhotoFeed("Picasa", picasaOptions, '#picasa-images');
-    });
+    }).click();
 
     $('<div/>')
       .id('picasa-images')
       .appendTo("#imageViewer");
-
-    $.showPhotoFeed("Picasa", '#picasa-images');
 
     /**
      * Flickr feed
      */
 
     flickrHdr = $('<div/>')
+      .text('Flickr Feed')
       .addClass('header ui-widget-header ui-widget')
-      .appendTo('#imageViewer')
-      .text('Flickr Feed');
+      .appendTo('#imageViewer');
 
     flickrBtnContainer = $('<div/>')
       .addClass('header-button-container')
       .appendTo(flickrHdr);
 
     var flickrTagInput = $('<input>');
+    flickrTagInput.val('portrait');
     flickrTagInput.appendTo(flickrBtnContainer);
     flickrTagInput.css('margin-right','1em');
     flickrTagInput.keydown(function (evt) {
@@ -292,7 +296,7 @@ goog.require('nokia.Storage');
     });
   
     var flickrSearchBtn = $('<button/>');
-    flickrSearchBtn.text('Show');
+    flickrSearchBtn.text('Refresh');
     flickrSearchBtn.button();
     flickrSearchBtn.appendTo(flickrBtnContainer);
     flickrSearchBtn.click(function() {
@@ -300,13 +304,11 @@ goog.require('nokia.Storage');
       var flickrOptions = {};
       flickrOptions.tags = flickrTagInput.val();
       $.updatePhotoFeed("Flickr", flickrOptions, '#flickr-images');
-    });
+    }).click();
 
     $('<div/>')
       .id('flickr-images')
       .appendTo("#imageViewer");
-
-    $.showPhotoFeed("Flickr", '#flickr-images');
 
     /**
      * Instagram feed
@@ -322,20 +324,18 @@ goog.require('nokia.Storage');
       .appendTo(instagramHdr);
 
     var instagramSearchBtn = $('<button/>');
-    instagramSearchBtn.text('Show');
+    instagramSearchBtn.text('Refresh');
     instagramSearchBtn.button();
     instagramSearchBtn.appendTo(instagramBtnContainer);
     instagramSearchBtn.click(function() {
       $('#instagram-images img').remove();
       var instagramOptions = {};
       $.updatePhotoFeed("Instagram", instagramOptions, '#instagram-images');
-    });
+    }).click();
 
     $('<div/>')
       .id('instagram-images')
       .appendTo("#imageViewer");
-
-    $.showPhotoFeed("Instagram", '#instagram-images');
 
     /**
      * Drag & Drop support

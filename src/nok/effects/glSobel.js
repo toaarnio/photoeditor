@@ -44,6 +44,7 @@ goog.provide('nokia.effect.glSobel');
    *
    ***********************/
 
+  var ENABLED = true;
   var effectName = "Edge Highlight";
   var kernelURI = "shaders/sobel.gl";
   var self = nokia.effect.glSobel;
@@ -56,9 +57,9 @@ goog.provide('nokia.effect.glSobel');
    * opportunity to do full-frame preprocessing on the source
    * image.
    */
-  nokia.effect.glSobel.prototype.init = function() {
+  self.prototype.init = function() {
 
-    console.log("glSobel init");
+    console.log(effectName + " init");
 
     var threshold = 0.5;  // default value
 
@@ -76,9 +77,9 @@ goog.provide('nokia.effect.glSobel');
 
     // Set up the WebGL shader
     
-    self.glShaderSobel = nokia.gl.setupShaderProgram(nokia.gl.context, effectName);
+    self.shader = nokia.gl.setupShaderProgram(nokia.gl.context, effectName);
 
-    // Preprocessing: The result goes to nokia.gl.textureFiltered
+    // Preprocess & measure speed
 
     nokia.utils.Timer.start("Sobel");
     self.apply(nokia.gl.context, threshold);
@@ -91,12 +92,8 @@ goog.provide('nokia.effect.glSobel');
     thresholdButton.click();
   };
 
-  /**
-   * uninit
-   */
-
-  nokia.effect.glSobel.prototype.uninit = function() {
-	  console.log("glSobel uninit");
+  self.prototype.uninit = function() {
+	  console.log(effectName + " uninit");
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////
@@ -113,7 +110,7 @@ goog.provide('nokia.effect.glSobel');
     var height = nokia.gl.height;
     var dstPixels = new Uint8Array(nokia.gl.width * nokia.gl.height * 4);
     nokia.utils.Timer.start("  GL shader execution + copyTexImage + readPixels");
-	  nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.glShaderSobel, uniforms);
+	  nokia.gl.renderToTexture(gl, nokia.gl.textureFiltered, self.shader, uniforms);
     gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, dstPixels);
     nokia.utils.Timer.elapsed("  GL shader execution + copyTexImage + readPixels", true);
   };
@@ -128,13 +125,13 @@ goog.provide('nokia.effect.glSobel');
    * because the WebGL context is not yet available.
    */
   
-  (function register() {
+  if (ENABLED) {
     var kernelSrc = nokia.utils.loadKernel("", kernelURI);
     var success = !!kernelSrc;
     if (success === true) {
       nokia.gl.fsSources[effectName] = kernelSrc;
       nokia.EffectManager.register(effectName, self);
     }
-  })();
+  }
 
 })(jQuery, nokia);
