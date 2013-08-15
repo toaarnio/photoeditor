@@ -10,7 +10,7 @@ SHADER_DST = build/htdocs/shaders/
 
 # IP address of our public server (needed for 'make publish')
 
-IP ?= 10.82.133.161
+IP ?= 10.82.133.84
 
 ###############################################################################
 
