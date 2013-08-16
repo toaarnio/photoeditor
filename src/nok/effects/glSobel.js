@@ -44,7 +44,7 @@ goog.provide('nokia.effect.glSobel');
    *
    ***********************/
 
-  var ENABLED = true;
+  var ENABLED = false;
   var effectName = "Edge Highlight";
   var kernelURI = "shaders/sobel.gl";
   var self = nokia.effect.glSobel;

@@ -45,7 +45,7 @@ goog.provide('nokia.effect.clSobel');
    *
    ***********************/
 
-  var ENABLED = true;
+  var ENABLED = false;
   var effectName = "Edge Detect";
   var kernelName = "clSobel";
   var kernelURI = "shaders/sobel.cl";

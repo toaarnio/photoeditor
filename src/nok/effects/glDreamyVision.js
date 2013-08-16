@@ -43,7 +43,7 @@ goog.provide('nokia.effect.glDreamyVision');
    *
    ***********************/
 
-  var ENABLED = true;
+  var ENABLED = false;
   var effectName = "Dreamy Vision";
   var kernelURI = "shaders/dreamyvision.gl";
   var self = nokia.effect.glDreamyVision;

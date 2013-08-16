@@ -43,7 +43,7 @@ goog.provide('nokia.effect.glFrostedGlass');
    *
    ***********************/
 
-  var ENABLED = true;
+  var ENABLED = false;
   var effectName = "Frosted Glass";
   var kernelURI = "shaders/frostedglass.gl";
   var self = nokia.effect.glFrostedGlass;
