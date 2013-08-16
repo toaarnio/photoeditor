@@ -49,7 +49,11 @@ a span.ui-button-text, label span.ui-button-text {
     max-height: 150px;
 }
 
-#imageViewer > img, #flickr-images > img, #picasa-images > img, #google-images > img, #instagram-images > img {
+#local-images > img, 
+#google-images > img,
+#flickr-images > img,
+#picasa-images > img,
+#instagram-images > img {
     max-width: 600px;
     max-height: 150px;
 
@@ -149,11 +153,19 @@ a span.ui-button-text, label span.ui-button-text {
 }
 
 #crop-container {
-    opacity: 0.5 !important;
+    opacity: 0.5;
 }
 
 #crop-container:hover {
-    opacity: 0.85 !important;
+    opacity: 0.85;
+}
+
+#crop-container.invisible {
+    opacity: 0.0;
+}
+
+#crop-container:hover.invisible {
+    opacity: 0.0;
 }
 
 .crop-slider {

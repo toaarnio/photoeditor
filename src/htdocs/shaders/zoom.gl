@@ -19,7 +19,7 @@
  * @param {uniform vec4} zoom the area of the texture to display, specified
  *        as scale factors in zoom.xy and the bottom-left corner in zoom.zw
  *
- * @author Tomi Aarnio, Nokia Research Tampere, 2011
+ * @author Tomi Aarnio, 2010-
  */
 
 precision mediump float;

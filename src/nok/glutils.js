@@ -821,7 +821,7 @@ goog.provide('nokia.gl');
   /**
    * @private
    */
-  nokia.gl.drawZoomed = function (gl, texture, ulx, uly, w, h) {
+  nokia.gl.drawZoomed = function (gl, texture, ulx, uly, w, h, disableThumbnail) {
     //console.log("nokia.gl.drawZoomed(gl, '" + texture.name + "'):");
     //console.log("  texture size = " + texture.width + " x " + texture.height);
     //console.log("  zoom window size = " + w + " x " + h);
@@ -832,8 +832,8 @@ goog.provide('nokia.gl');
     var zoomFactorY = h/(texture.height*texture.height);
     var zoomOffsetX = ulx/texture.width;
     var zoomOffsetY = uly/texture.height;
-    var thumbWidth = texture.width * 0.25;
-    var thumbHeight = texture.height * 0.25;
+    var thumbWidth = disableThumbnail ? 0.0 : texture.width * 0.25;
+    var thumbHeight = disableThumbnail ? 0.0 : texture.height * 0.25;
     nokia.gl.setUniformf(gl, shader, "zoom", zoomFactorX, zoomFactorY, zoomOffsetX, zoomOffsetY);
     nokia.gl.setUniformf(gl, shader, "resolution", texture.width, texture.height, thumbWidth, thumbHeight);
     nokia.gl.setUniformi(gl, shader, "src", 0);
@@ -1149,9 +1149,10 @@ nokia.glu = {
    * @param {Number} uly the upper-left Y coordinate of the zoom region, in texels
    * @param {Number} w the width of the zoom region, in texels
    * @param {Number} h the height of the zoom region, in texels
+   * @param {Boolean} disableThumbnail `true` to disable the full-image thumbnail
    */
-  drawZoomed : function (texture, ulx, uly, w, h) {
-    return nokia.gl.drawZoomed(nokia.gl.context, texture, ulx, uly, w, h);
+  drawZoomed : function (texture, ulx, uly, w, h, disableThumbnail) {
+    return nokia.gl.drawZoomed(nokia.gl.context, texture, ulx, uly, w, h, disableThumbnail);
   },
 
   /**

@@ -14,7 +14,7 @@
  * Image editor main window.
  *
  * @author Timo Reunanen, 2010
- * @author Tomi Aarnio, 2011
+ * @author Tomi Aarnio, 2010-
  */
 
 goog.require('nokia.EffectManager');
@@ -45,7 +45,6 @@ goog.require('nokia.utils');
    * IMAGE EDITOR MAIN WINDOW
    *
    ********************************************************************/
-
   jQuery.imageEditWindow = function() {
 
     $.hideMainWindow();        // hide the image browser & scroll bar
@@ -72,35 +71,32 @@ goog.require('nokia.utils');
   };
 
   /*********************************************************************
+   *
    * MAIN MENU
    *
-   * @private 
    ********************************************************************/
   jQuery.fn.mainMenu = function () {
 
     var self = this;
-    
+    self.clearMenu();
+
     // Set up the main menu buttons.  The buttons are regular html
     // <button> elements, except for 'Export' which is actually an
     // anchor (<a>) element containing the image data as a
     // base64-encoded JPEG in its "href" attribute, and the filename
     // in its "download" attribute.
 
-    self.clearMenu();
-    self.saveButton = self.addMenuButton('Save').button('option', 'icons', {primary: 'ui-icon-check'});
+    if  (false) {
+      self.saveButton = self.addMenuButton('Save').button('option', 'icons', {primary: 'ui-icon-check'});
+      self.saveButton.click(function() {
+        var sourceCanvas = $.getCanvasElement();
+        $.saveImage(sourceCanvas);
+        $.clearDirty();
+        $.mainWindow();
+      });
+    }
+
     self.exportButton = self.addHrefButton('Export').button('option', 'icons', {primary: 'ui-icon-check'});
-    self.effectsButton = self.addMenuButton('Effects').button('option', 'icons', {primary: 'ui-icon-triangle-1-e'});
-    self.adjustButton = self.addMenuButton('Adjust').button('option', 'icons', {primary: 'ui-icon-triangle-1-e'});
-    self.backButton = self.addMenuButton('Back').button('option', 'icons', {primary: 'ui-icon-closethick'});
-
-    // Define what happens when clicking each button
-
-    self.saveButton.click(function() {
-      var sourceCanvas = $.getCanvasElement();
-      $.saveImage(sourceCanvas);
-      $.mainWindow();
-    });
-
     self.exportButton.click(function(event) {
       var imageAsDataURL = $.getCanvasElement().toDataURL('image/jpeg', 0.95);
       var storageName = $.getContainer().data('image-name');
@@ -111,28 +107,38 @@ goog.require('nokia.utils');
       console.log("Exporting a base64-encoded JPEG image (" + storageName + ") for a total of " + imageAsDataURL.length + " bytes.");
       self.exportButton.attr('href', imageAsDataURL);
       self.exportButton.attr('download', storageName);
+      $.clearDirty();
     });
 
+    self.effectsButton = self.addMenuButton('Effects').button('option', 'icons', {primary: 'ui-icon-triangle-1-e'});
     self.effectsButton.click(function () {
       self.effectsMenu();
     });
 
+    self.adjustButton = self.addMenuButton('Adjust').button('option', 'icons', {primary: 'ui-icon-triangle-1-e'});
     self.adjustButton.click(function () {
       self.adjustMenu();
     });
 
+    self.backButton = self.addMenuButton('Back').button('option', 'icons', {primary: 'ui-icon-closethick'});
     self.backButton.click(function() {
       if (!$.isDirty() || confirm("Discard all changes?")) {
-        $.mainWindow();
         $.clearDirty();
+        $.mainWindow();
+      }
+    });
+
+    $(window).bind('beforeunload', function(event) {
+      if ($.isDirty()) {
+        return "You will lose all unsaved changes."
       }
     });
   };
-  
+
   /*********************************************************************
+   *
    * EFFECTS MENU
    *
-   * @private 
    ********************************************************************/
   jQuery.fn.effectsMenu = function () {
     this.clearMenu();
@@ -156,8 +162,6 @@ goog.require('nokia.utils');
 
       self.addMenuButton(effectName).click(function () {
         self.clearMenu();
-
-        // Call private init function
         effectInst._init();
       }).button('option', 'icons', {primary: 'ui-icon-triangle-1-e'});
     });
@@ -168,9 +172,9 @@ goog.require('nokia.utils');
   };
 
   /*********************************************************************
+   *
    * ADJUST MENU
    *
-   * @private 
    ********************************************************************/
   jQuery.fn.adjustMenu = function () {
     this.clearMenu();
@@ -179,7 +183,7 @@ goog.require('nokia.utils');
 
     createRotateAttribute.call(this);
     createMirrorAttribute.call(this);
-    createScaleAttribute.call(this);
+    //createScaleAttribute.call(this); // not very useful, disabled
     createCropAttribute.call(this);
 
     this.addMenuButton('Back').click(function () {
@@ -188,42 +192,38 @@ goog.require('nokia.utils');
   };
 
   /*********************************************************************
+   *
    * ADJUST / ROTATE
    *
-   * @private 
    ********************************************************************/
   function createRotateAttribute () {
     $(this).addMenuButton('Rotate').click(function () {
       console.log('Rotate 90 degrees');
 
-      // Create temporary canvas for drawing
       var temporaryCanvas = $('<canvas>')[0];
 
       // Set new width and height
       temporaryCanvas.width = $.getCanvasElement().height;
       temporaryCanvas.height = $.getCanvasElement().width;
 
-      var context = temporaryCanvas.getContext('2d');
-
       // Do some transition magic
+      var context = temporaryCanvas.getContext('2d');
       context.save();
       context.translate($.getCanvasElement().height, 0);
       context.rotate(Math.PI / 2);
       context.drawImage($.getCanvasElement(), 0, 0, $.getCanvasElement().width, $.getCanvasElement().height);
       context.restore();
 
-      $.updateCanvas(temporaryCanvas);
-
       // Update view
-      $.resizeCanvasCSS();
+      $.updateCanvas(temporaryCanvas);
       $.setDirty();
     });
   }
 
   /*********************************************************************
+   *
    * ADJUST / MIRROR
    *
-   * @private 
    ********************************************************************/
   function createMirrorAttribute () {
 
@@ -237,9 +237,9 @@ goog.require('nokia.utils');
   }
 
   /*********************************************************************
+   *
    * ADJUST / SCALE
    *
-   * @private 
    ********************************************************************/
   function createScaleAttribute () {
     var scaleDimension = $('<div/>');
@@ -344,8 +344,6 @@ goog.require('nokia.utils');
       context.restore();
 
       $.updateCanvas(temporaryCanvas);
-
-      $.resizeCanvasCSS();
       $.setDirty();
     });
 
@@ -365,14 +363,23 @@ goog.require('nokia.utils');
   }
 
   /*********************************************************************
+   *
    * ADJUST / CROP
    *
-   * @private 
    ********************************************************************/
   function createCropAttribute () {
 
     var orgW = $.getCanvasElement().width;
     var orgH = $.getCanvasElement().height;
+
+    // Create a backup of the current (un-cropped) canvas
+
+    var currentCanvas = $.getCanvasElement();
+    var backupCanvas = $('<canvas>')[0];
+    var backupCtx = backupCanvas.getContext('2d');
+    backupCanvas.width = currentCanvas.width;
+    backupCanvas.height = currentCanvas.height;
+    backupCtx.drawImage(currentCanvas, 0, 0, currentCanvas.width, currentCanvas.height);
 
     // Snap the aspect ratio of the image to one of the predefined ratios if it's close enough
 
@@ -396,6 +403,7 @@ goog.require('nokia.utils');
     var cropSliderYValue = 0.75;
 
     var updateCropView = function () {
+      
       // console.log('update crop', cropX, cropY, cropSliderValue);
 
       var newWidth = $.getCanvasObject().width() * cropSliderXValue;
@@ -435,7 +443,7 @@ goog.require('nokia.utils');
     var cropSliderX = $('<div/>').id('crop-slider-x').css('margin', '1em').show();
     var cropSliderY = $('<div/>').id('crop-slider-y').css('margin', '1em').hide();
     var cropCancelButton = $('<button/>').text('Cancel').id('crop-cancel-button').css('float', 'left').button();
-    var cropPreviewButton = $('<button/>').text('Preview').id('crop-preview-button').button();
+    var cropPreviewButton = $('<button/>').text('Preview (press & hold)').id('crop-preview-button').button();
     var cropApplyButton = $('<button/>').text('Apply').id('crop-apply-button').css('float', 'right').button();
 
     cropContainer.append(cropRatioButtons);
@@ -552,34 +560,14 @@ goog.require('nokia.utils');
 
     // Preview button handler
 
-    cropPreviewButton.click(function () {
-      
-    });
+    cropPreviewButton.mousedown(function () {
 
-    // Set up Cancel and Apply buttons
+      cropBorderRect.hide();
+      cropContainer.addClass('invisible');
+      //cropContainer.css(fadeTo(1000, 0.01);
 
-    cropCancelButton.click(function () {
-      cropAttribute.click();    // just hide the Crop dialog
-    });
-
-    cropApplyButton.click(function () {
-      // Hide me. Reuses cropAttributes click handler.
-      cropAttribute.click();
-
-      /*
-      // Top left corner position
-      var startX = (cropX - (cropBorderRect.width() / 2)) * ratio;
-      var startY = (cropY - (cropBorderRect.height() / 2)) * ratio;
-
-      // Create temporary canvas so we can draw
-      var tempCanvas = $('<canvas>')[0];
-
-      // Set new width and height for canvas element
-      tempCanvas.width = cropBorderRect.width() * ratio;
-      tempCanvas.height = cropBorderRect.height() * ratio;
-      */
-
-      // Get scale ratio of image because image can be smaller in screen than it really is
+      // Compute a scaling factor to convert screen pixels to image
+      // pixels
 
       var ratio = orgW / $.getCanvasObject().width();
 
@@ -597,18 +585,76 @@ goog.require('nokia.utils');
       tempCanvas.width = cropWidth;
       tempCanvas.height = cropHeight;
 
+      // Draw the cropped image to tempCanvas and from there to screen
+
       var canvasContext = tempCanvas.getContext('2d');
+      canvasContext.save();
+      canvasContext.translate(-startX, -startY);
+      canvasContext.drawImage($.getCanvasElement(), 0, 0, $.getCanvasElement().width, $.getCanvasElement().height);
+      canvasContext.restore();
+      $.updateCanvas(tempCanvas);
+    });
+
+    // Restore the original, un-cropped image when done previewing
+
+    cropPreviewButton.mouseup(function() {
+      if (cropBorderRect.css('display') == 'none') {
+        $.updateCanvas(backupCanvas);
+        cropBorderRect.show();
+        cropContainer.removeClass('invisible');
+      }
+    });
+
+    cropPreviewButton.mouseleave(function() {
+      if (cropBorderRect.css('display') == 'none') {
+        $.updateCanvas(backupCanvas);
+        cropBorderRect.show();
+        cropContainer.removeClass('invisible');
+      }
+    });
+
+    // Set up Cancel and Apply buttons
+
+    cropCancelButton.click(function () {
+      cropAttribute.click();    // just hide the Crop dialog
+    });
+
+    cropApplyButton.click(function () {
+
+      // Hide the crop dialog
+
+      cropAttribute.click();
+
+      // Compute a scaling factor to convert screen pixels to image
+      // pixels
+
+      var ratio = orgW / $.getCanvasObject().width();
+
+      // Compute the top left corner position of the crop window
+
+      var cropWidth = cropSliderXValue * orgW;
+      var cropHeight = cropSliderYValue * orgH;
+      var startX = cropX * ratio - cropWidth / 2;
+      var startY = cropY * ratio - cropHeight / 2;
+      console.log('crop ' + cropWidth + " x " + cropHeight + " pixels at " + startX + ", " + startY);
+
+      // Create a temporary canvas to serve as the crop destination
+
+      var tempCanvas = $('<canvas>')[0];
+      tempCanvas.width = cropWidth;
+      tempCanvas.height = cropHeight;
 
       // Do some transformation magic
+
+      var canvasContext = tempCanvas.getContext('2d');
       canvasContext.save();
       canvasContext.translate(-startX, -startY);
       canvasContext.drawImage($.getCanvasElement(), 0, 0, $.getCanvasElement().width, $.getCanvasElement().height);
       canvasContext.restore();
 
-      $.updateCanvas(tempCanvas);
+      // Update the view
 
-      // Update view
-      $.resizeCanvasCSS();
+      $.updateCanvas(tempCanvas);
       $.setDirty();
     });
 
@@ -850,8 +896,8 @@ goog.require('nokia.utils');
    * The new image is also stored into a GL texture that is used
    * as the primary image data source elsewhere in the editor.
    *
-   * @param {HTMLImageElement/HTMLCanvasElement} newImage the new image
-   * or canvas
+   * @param {HTMLImageElement/HTMLCanvasElement} newImage the new
+   *        image or canvas
    */
   jQuery.updateCanvas = function (newImage) {
     console.log("updateCanvas(" + newImage + "): ");
@@ -920,14 +966,15 @@ goog.require('nokia.utils');
     return dirtyFlag;
   };
 
-  // =======================
-  // = window resize event =
-  // =======================
-
+  /*********************************************************************
+   *
+   * WINDOW RESIZE EVENT
+   *
+   ********************************************************************/
   $(window).bind('resize', function(event) {
-  if ($.getCanvasElement() != null) {
-    $.resizeCanvasCSS();
-  }
+    if ($.getCanvasElement() != null) {
+      $.resizeCanvasCSS();
+    }
   });
 
 })(jQuery, nokia);
