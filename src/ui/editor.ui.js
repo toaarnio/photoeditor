@@ -369,62 +369,40 @@ goog.require('nokia.utils');
    ********************************************************************/
   function createCropAttribute () {
 
-    var orgW = $.getCanvasElement().width;
-    var orgH = $.getCanvasElement().height;
+    $.crop = {};
+    $.crop.orgW = $.getCanvasElement().width;
+    $.crop.orgH = $.getCanvasElement().height;
 
     // Create a backup of the current (un-cropped) canvas
 
     var currentCanvas = $.getCanvasElement();
-    var backupCanvas = $('<canvas>')[0];
-    var backupCtx = backupCanvas.getContext('2d');
-    backupCanvas.width = currentCanvas.width;
-    backupCanvas.height = currentCanvas.height;
+    $.crop.backupCanvas = $('<canvas>')[0];
+    $.crop.backupCanvas.width = currentCanvas.width;
+    $.crop.backupCanvas.height = currentCanvas.height;
+    var backupCtx = $.crop.backupCanvas.getContext('2d');
     backupCtx.drawImage(currentCanvas, 0, 0, currentCanvas.width, currentCanvas.height);
 
     // Snap the aspect ratio of the image to one of the predefined ratios if it's close enough
 
-    var cropOrgAspect = orgW/orgH;
-    cropOrgAspect = nokia.utils.isAboutEqual(cropOrgAspect, 4/3, 2/orgW) ? 4/3 : cropOrgAspect;
-    cropOrgAspect = nokia.utils.isAboutEqual(cropOrgAspect, 3/4, 2/orgH) ? 3/4 : cropOrgAspect;
-    cropOrgAspect = nokia.utils.isAboutEqual(cropOrgAspect, 3/2, 2/orgW) ? 3/2 : cropOrgAspect;
-    cropOrgAspect = nokia.utils.isAboutEqual(cropOrgAspect, 2/3, 2/orgH) ? 2/3 : cropOrgAspect;
-    cropOrgAspect = nokia.utils.isAboutEqual(cropOrgAspect, 16/9, 2/orgW) ? 16/9 : cropOrgAspect;
-    if (cropOrgAspect != orgW/orgH) {
-      console.log("Original aspect ratio = " + orgW/orgH + " rounded to " + cropOrgAspect);
+    var cropOrgAspect = $.crop.orgW / $.crop.orgH;
+    cropOrgAspect = nokia.utils.isAboutEqual(cropOrgAspect, 4/3, 2/$.crop.orgW) ? 4/3 : cropOrgAspect;
+    cropOrgAspect = nokia.utils.isAboutEqual(cropOrgAspect, 3/4, 2/$.crop.orgH) ? 3/4 : cropOrgAspect;
+    cropOrgAspect = nokia.utils.isAboutEqual(cropOrgAspect, 3/2, 2/$.crop.orgW) ? 3/2 : cropOrgAspect;
+    cropOrgAspect = nokia.utils.isAboutEqual(cropOrgAspect, 2/3, 2/$.crop.orgH) ? 2/3 : cropOrgAspect;
+    cropOrgAspect = nokia.utils.isAboutEqual(cropOrgAspect, 16/9, 2/$.crop.orgW) ? 16/9 : cropOrgAspect;
+    if (cropOrgAspect != $.crop.orgW / $.crop.orgH) {
+      console.log("Original aspect ratio = " + $.crop.orgW/$.crop.orgH + " rounded to " + cropOrgAspect);
     }
 
-    // TODO: move cropX & cropY from screen space to image space (to minimize rounding errors)
+    // Set up global variables for event handlers
 
-    var cropTargetAspect = cropOrgAspect;
-    var cropAspectRatioLocked = true;
-    var cropX = $.getCanvasObject().width() / 2;
-    var cropY = $.getCanvasObject().height() / 2;
-    var cropSliderXValue = 0.75;
-    var cropSliderYValue = 0.75;
-
-    var updateCropView = function () {
-      
-      // console.log('update crop', cropX, cropY, cropSliderValue);
-
-      var newWidth = $.getCanvasObject().width() * cropSliderXValue;
-      var newHeight = $.getCanvasObject().height() * cropSliderYValue;
-
-      cropBorderRect.width(newWidth);
-      cropBorderRect.height(newHeight);
-
-      cropX = Math.max(cropX, Math.floor(cropBorderRect.width() / 2));
-      cropY = Math.max(cropY, Math.floor(cropBorderRect.height() / 2));
-
-      cropX = Math.min(cropX, $.getCanvasObject().width() - Math.floor(cropBorderRect.width() / 2));
-      cropY = Math.min(cropY, $.getCanvasObject().height() - Math.floor(cropBorderRect.height() / 2));
-      
-      var canvasPosition = $.getCanvasObject().position();
-
-      cropBorderRect.css({
-        left: canvasPosition.left + cropX - (newWidth / 2),
-        top: canvasPosition.top + cropY - (newHeight / 2)
-      });
-    };
+    $.crop.orgAspect = cropOrgAspect;
+    $.crop.targetAspect = cropOrgAspect;
+    $.crop.aspectRatioLocked = true;
+    $.crop.x = $.getCanvasObject().width() / 2;
+    $.crop.y = $.getCanvasObject().height() / 2;
+    $.crop.sliderX = 0.75;
+    $.crop.sliderY = 0.75;
 
     // Create a <div> to visualize the crop rectangle
 
@@ -435,6 +413,65 @@ goog.require('nokia.utils');
       opacity: 0.5,
       position: 'absolute'
     });
+
+    // Updates the crop rectangle when its position or size is changed
+
+    function updateCropView() {
+
+      var newWidth = $.getCanvasObject().width() * $.crop.sliderX;
+      var newHeight = $.getCanvasObject().height() * $.crop.sliderY;
+
+      cropBorderRect.width(newWidth);
+      cropBorderRect.height(newHeight);
+
+      $.crop.x = Math.max($.crop.x, Math.floor(cropBorderRect.width() / 2));
+      $.crop.y = Math.max($.crop.y, Math.floor(cropBorderRect.height() / 2));
+
+      $.crop.x = Math.min($.crop.x, $.getCanvasObject().width() - Math.floor(cropBorderRect.width() / 2));
+      $.crop.y = Math.min($.crop.y, $.getCanvasObject().height() - Math.floor(cropBorderRect.height() / 2));
+      
+      var canvasPosition = $.getCanvasObject().position();
+
+      cropBorderRect.css({
+        left: canvasPosition.left + $.crop.x - (newWidth / 2),
+        top: canvasPosition.top + $.crop.y - (newHeight / 2)
+      });
+    };
+
+    // Displays a cropped region of the image on the screen canvas
+    
+    function crop() {
+
+      console.log("Crop: OrgW = ", $.crop.orgW);
+
+      // Compute a scaling factor to convert screen pixels to image
+      // pixels
+
+      var ratio = $.crop.orgW / $.getCanvasObject().width();
+
+      // Compute the top left corner position of the crop window
+
+      var cropWidth = $.crop.sliderX * $.crop.orgW;
+      var cropHeight = $.crop.sliderY * $.crop.orgH;
+      var startX = $.crop.x * ratio - cropWidth / 2;
+      var startY = $.crop.y * ratio - cropHeight / 2;
+      console.log('crop ' + cropWidth + " x " + cropHeight + " pixels at " + startX + ", " + startY);
+
+      // Create a temporary canvas to serve as the crop destination
+
+      var tempCanvas = $('<canvas>')[0];
+      tempCanvas.width = cropWidth;
+      tempCanvas.height = cropHeight;
+
+      // Draw the cropped image to tempCanvas and from there to screen
+
+      var canvasContext = tempCanvas.getContext('2d');
+      canvasContext.save();
+      canvasContext.translate(-startX, -startY);
+      canvasContext.drawImage($.getCanvasElement(), 0, 0, $.getCanvasElement().width, $.getCanvasElement().height);
+      canvasContext.restore();
+      $.updateCanvas(tempCanvas);
+    }
 
     // Create and populate the crop dialog
 
@@ -466,32 +503,32 @@ goog.require('nokia.utils');
 
     cropRatioButtons.children().click(function () {
       var resetCrop = false;
-      cropAspectRatioLocked = true;
+      $.crop.aspectRatioLocked = true;
       cropSliderY.hide();
 
       switch ($(this).text()) {
       case "4:3":
-        cropTargetAspect = 4/3; 
+        $.crop.targetAspect = 4/3; 
         break;
       case "3:4":
-        cropTargetAspect = 3/4;
+        $.crop.targetAspect = 3/4;
         break;
       case "3:2":
-        cropTargetAspect = 3/2;
+        $.crop.targetAspect = 3/2;
         break;
       case "2:3":
-        cropTargetAspect = 2/3;
+        $.crop.targetAspect = 2/3;
         break;
       case "16:9":
-        cropTargetAspect = 16/9;
+        $.crop.targetAspect = 16/9;
         break;
       case "Reset":
         resetCrop = true;
-        cropTargetAspect = cropOrgAspect;
+        $.crop.targetAspect = $.crop.orgAspect;
         break;
       case "Free":
-        cropTargetAspect = cropOrgAspect;
-        cropAspectRatioLocked = false;
+        $.crop.targetAspect = $.crop.orgAspect;
+        $.crop.aspectRatioLocked = false;
         cropSliderY.show();
         break;
       default:
@@ -499,50 +536,52 @@ goog.require('nokia.utils');
         break;
       }
 
-      console.log("original & target aspect ratios: " + cropOrgAspect + ", " + cropTargetAspect);
+      console.log("original & target aspect ratios: " + $.crop.orgAspect + ", " + $.crop.targetAspect);
 
-      var makeThinner = (cropOrgAspect > cropTargetAspect);
-      var makeWider = (cropOrgAspect < cropTargetAspect);
+      var makeThinner = ($.crop.orgAspect > $.crop.targetAspect);
+      var makeWider = ($.crop.orgAspect < $.crop.targetAspect);
       if (makeThinner) {
-        cropSliderXValue = cropTargetAspect / cropOrgAspect;
-        cropSliderYValue = 1.0;
+        $.crop.sliderX = $.crop.targetAspect / $.crop.orgAspect;
+        $.crop.sliderY = 1.0;
       } else if (makeWider) {
-        cropSliderXValue = 1.0;
-        cropSliderYValue = cropOrgAspect / cropTargetAspect;
+        $.crop.sliderX = 1.0;
+        $.crop.sliderY = $.crop.orgAspect / $.crop.targetAspect;
       } else if (resetCrop === true) {
-        cropSliderXValue = 1.0;
-        cropSliderYValue = 1.0;
+        $.crop.sliderX = 1.0;
+        $.crop.sliderY = 1.0;
       } else {
-        cropSliderYValue = cropSliderXValue;
+        $.crop.sliderY = $.crop.sliderX;
       }
 
-      cropSliderX.slider('value', cropSliderXValue);
-      cropSliderY.slider('value', cropSliderYValue);
+      cropSliderX.slider('value', $.crop.sliderX);
+      cropSliderY.slider('value', $.crop.sliderY);
       updateCropView();
     });
 
-    // Set up sliders for X & Y crop rectangle size
+    /**
+     * Crop sliders
+     */
 
     cropSliderX.slider({
       min: 0,
       max: 1,
       step: 1/$.getCanvasElement().width,
-      value: cropSliderXValue,
+      value: $.crop.sliderX,
       slide: function (evt, ui) {
-        if (cropAspectRatioLocked) {
-        if (cropOrgAspect == cropTargetAspect) {
-          cropSliderXValue = ui.value;
-          cropSliderYValue = ui.value;
+        if ($.crop.aspectRatioLocked) {
+        if ($.crop.orgAspect == $.crop.targetAspect) {
+          $.crop.sliderX = ui.value;
+          $.crop.sliderY = ui.value;
         } else {
-          var sliderRatioYperX = cropOrgAspect / cropTargetAspect;
-          var sliderRatioXperY = cropTargetAspect / cropOrgAspect;
-          cropSliderXValue = Math.min(sliderRatioXperY, ui.value);
-          cropSliderYValue = Math.min(1.0, ui.value * sliderRatioYperX);
+          var sliderRatioYperX = $.crop.orgAspect / $.crop.targetAspect;
+          var sliderRatioXperY = $.crop.targetAspect / $.crop.orgAspect;
+          $.crop.sliderX = Math.min(sliderRatioXperY, ui.value);
+          $.crop.sliderY = Math.min(1.0, ui.value * sliderRatioYperX);
         }
         } else {
-        cropSliderXValue = ui.value;
+        $.crop.sliderX = ui.value;
         }
-        //console.log('crop slider x,y = ' + cropSliderXValue + ", " + cropSliderYValue);
+        //console.log('crop slider x,y = ' + $.crop.sliderX + ", " + $.crop.sliderY);
         updateCropView();
       }
     });
@@ -551,55 +590,45 @@ goog.require('nokia.utils');
       min: 0,
       max: 1,
       step: 1/$.getCanvasElement().height,
-      value: cropSliderYValue,
+      value: $.crop.sliderY,
       slide: function (evt, ui) {
-        cropSliderYValue = ui.value;
+        $.crop.sliderY = ui.value;
         updateCropView();
       }
     });
 
-    // Preview button handler
+    /**
+     * Crop -> Cancel
+     */
 
-    cropPreviewButton.mousedown(function () {
-
-      cropBorderRect.hide();
-      cropContainer.addClass('invisible');
-      //cropContainer.css(fadeTo(1000, 0.01);
-
-      // Compute a scaling factor to convert screen pixels to image
-      // pixels
-
-      var ratio = orgW / $.getCanvasObject().width();
-
-      // Compute the top left corner position of the crop window
-
-      var cropWidth = cropSliderXValue * orgW;
-      var cropHeight = cropSliderYValue * orgH;
-      var startX = cropX * ratio - cropWidth / 2;
-      var startY = cropY * ratio - cropHeight / 2;
-      console.log('crop ' + cropWidth + " x " + cropHeight + " pixels at " + startX + ", " + startY);
-
-      // Create a temporary canvas to serve as the crop destination
-
-      var tempCanvas = $('<canvas>')[0];
-      tempCanvas.width = cropWidth;
-      tempCanvas.height = cropHeight;
-
-      // Draw the cropped image to tempCanvas and from there to screen
-
-      var canvasContext = tempCanvas.getContext('2d');
-      canvasContext.save();
-      canvasContext.translate(-startX, -startY);
-      canvasContext.drawImage($.getCanvasElement(), 0, 0, $.getCanvasElement().width, $.getCanvasElement().height);
-      canvasContext.restore();
-      $.updateCanvas(tempCanvas);
+    cropCancelButton.click(function () {
+      cropAttribute.click();
     });
 
-    // Restore the original, un-cropped image when done previewing
+    /**
+     * Crop -> Apply
+     */
+
+    cropApplyButton.click(function () {
+      cropAttribute.click();
+      crop();
+      $.setDirty();
+      $.fn.adjustMenu();
+    });
+
+    /**
+     * Crop -> Preview
+     */
+
+    cropPreviewButton.mousedown(function () {
+      cropBorderRect.hide();
+      cropContainer.addClass('invisible');
+      crop();
+    });
 
     cropPreviewButton.mouseup(function() {
       if (cropBorderRect.css('display') == 'none') {
-        $.updateCanvas(backupCanvas);
+        $.updateCanvas($.crop.backupCanvas);
         cropBorderRect.show();
         cropContainer.removeClass('invisible');
       }
@@ -607,67 +636,10 @@ goog.require('nokia.utils');
 
     cropPreviewButton.mouseleave(function() {
       if (cropBorderRect.css('display') == 'none') {
-        $.updateCanvas(backupCanvas);
+        $.updateCanvas($.crop.backupCanvas);
         cropBorderRect.show();
         cropContainer.removeClass('invisible');
       }
-    });
-
-    // Set up Cancel and Apply buttons
-
-    cropCancelButton.click(function () {
-      cropAttribute.click();    // just hide the Crop dialog
-    });
-
-    cropApplyButton.click(function () {
-
-      // Hide the crop dialog
-
-      cropAttribute.click();
-
-      // Compute a scaling factor to convert screen pixels to image
-      // pixels
-
-      var ratio = orgW / $.getCanvasObject().width();
-
-      // Compute the top left corner position of the crop window
-
-      var cropWidth = cropSliderXValue * orgW;
-      var cropHeight = cropSliderYValue * orgH;
-      var startX = cropX * ratio - cropWidth / 2;
-      var startY = cropY * ratio - cropHeight / 2;
-      console.log('crop ' + cropWidth + " x " + cropHeight + " pixels at " + startX + ", " + startY);
-
-      // Create a temporary canvas to serve as the crop destination
-
-      var tempCanvas = $('<canvas>')[0];
-      tempCanvas.width = cropWidth;
-      tempCanvas.height = cropHeight;
-
-      // Do some transformation magic
-
-      var canvasContext = tempCanvas.getContext('2d');
-      canvasContext.save();
-      canvasContext.translate(-startX, -startY);
-      canvasContext.drawImage($.getCanvasElement(), 0, 0, $.getCanvasElement().width, $.getCanvasElement().height);
-      canvasContext.restore();
-
-      // Update the view
-
-      $.updateCanvas(tempCanvas);
-      $.setDirty();
-    });
-
-    cropContainer.mouseenter(function () {
-      //cropSliderX.show();
-      //if (cropAspectRatioLocked == false) {
-      //  cropSliderY.show();
-      //}
-    });
-
-    cropContainer.mouseleave(function () {
-      //cropSliderX.hide();
-      //cropSliderY.hide();
     });
 
     var cropAttribute = $(this).addCustomAttribute('Crop', cropContainer);
@@ -679,33 +651,36 @@ goog.require('nokia.utils');
 
     cropClickView.mousedown(function (evt) {
       mouseDown = true;
-      cropX = evt.layerX;
-      cropY = evt.layerY;
+      $.crop.x = evt.layerX;
+      $.crop.y = evt.layerY;
       updateCropView();
       return false;
     });
     cropClickView.mouseup(function (evt) {
       mouseDown = false;
-      cropX = evt.layerX;
-      cropY = evt.layerY;
+      $.crop.x = evt.layerX;
+      $.crop.y = evt.layerY;
       updateCropView();
     });
     cropClickView.mousemove(function (evt) {
       if (!mouseDown) {
         return;
       }
-      cropX = evt.layerX;
-      cropY = evt.layerY;
+      $.crop.x = evt.layerX;
+      $.crop.y = evt.layerY;
       updateCropView();
     });
 
-    // Use same size as canvas uses
-
     $.getContainer().append(cropBorderRect, cropClickView);
 
-    // Initially hide crop views
+    // Initially hide crop rectangle and dialog
+
     cropBorderRect.hide();
     cropClickView.hide();
+
+    /**
+     * Crop dialog
+     */
 
     cropAttribute.click(function () {
       if ($(this).buttonValue()) {
