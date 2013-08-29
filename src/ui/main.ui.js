@@ -381,6 +381,33 @@
       fileInput.trigger('click');
     });
 
+    /**
+     * About Box (redirect to another page)
+     */
+
+    /*
+      Contents -
+      
+      Photo Editor Prototype by Nokia Research
+
+      Written by Tomi Aarnio and Timo Reunanen
+      
+      Source code available on Github
+
+      Tested on 
+
+      Based on HTML and WebGL, uses WebCL for
+      additional effects.
+    */
+
+    var aboutButton = $('<button/>');
+    aboutButton.appendTo(topButtonContainer);
+    aboutButton.text('About');
+    aboutButton.button();
+    aboutButton.click(function() {
+      window.location = '/demos.html';
+    });
+
     topButtonContainer.buttonset();
 
     /**
