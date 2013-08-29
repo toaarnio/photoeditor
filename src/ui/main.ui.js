@@ -355,10 +355,10 @@
      * Load From Disk
      */
 
-    var fileInput = $('<input type="file" multiple="true" accept="image/*"/>');
+    var fileInput = $('<input type="file" multiple="false" accept="image/*"/>');
     fileInput.css({ opacity: 0.0, display: 'none' });
     fileInput.appendTo(topButtonContainer);
-    fileInput.change(function () {
+    fileInput.change(function() {
       console.log("Loading ", this.files.length, "images...");
       if (this.files.length === 0) {
         return;
