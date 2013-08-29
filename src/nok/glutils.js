@@ -275,16 +275,9 @@ goog.provide('nokia.gl');
     return gl;
   };
 
-  nokia.gl.getShader = function(gl, shader, vertexShaderName, fragmentShaderName) {
-    if (true) {
-      console.log("nokia.gl.getShader: retrieving shader...");
-      return nokia.gl.setupShaders(gl, vertexShaderName, fragmentShaderName);
-    } else {
-      console.log("nokia.gl.getShader: shader", shader.name, "already loaded.");
-      return shader;
-    }
-  };
-
+  /**
+   * Returns a new Shader, compiled from the given source.
+   */
   nokia.gl.createShader = function (gl, type, source) {
 
     var shader = gl.createShader(type);
@@ -293,11 +286,16 @@ goog.provide('nokia.gl');
 
     var infoLog = gl.getShaderInfoLog(shader);
     var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    console.log("  Shader compile status: ", success);
     console.log("  Shader compiler info log: " + (infoLog ? infoLog : "<empty>"));
 
     return success ? shader : null;
   };
 
+  /**
+   * Returns a new Program, linked from the given vertex and fragment
+   * shaders. The shaders must be already compiled.
+   */
   nokia.gl.createShaderProgram = function (gl, vsBinary, fsBinary) {
     
     var program = gl.createProgram();
@@ -305,10 +303,11 @@ goog.provide('nokia.gl');
     gl.attachShader(program, fsBinary);
     gl.linkProgram(program);
 
-    var infoLog = gl.getProgramInfoLog(program);
+    var infoLog = nokia.gl.getProgramInfoLog(program);
     var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+    console.log("  Shader link status: ", success);
     console.log("  Shader linker info log: " + (infoLog ? infoLog : "<empty>"));
-    
+
     return success ? program : null;
   };
 
@@ -334,152 +333,16 @@ goog.provide('nokia.gl');
   };
 
   /**
-   * Loads, compiles, links, and activates the given vertex shader
-   * and fragment shader. The shaders are loaded either from the DOM
-   * tree with the elements identified by the given shader names, or
-   * failing that, from URIs formed by "./shaders/&lt;shaderName&gt;.gl".
-   *
-   * @param {WebGLRenderingContext} gl the WebGL context to associate
-   * the shaders with
-   *
-   * @param {String} vertexShaderName the vertex shader to load
-   * 
-   * @param {String} fragmentShaderName the fragment shader to load;
-   * this name is also associated with the shader program as a whole,
-   * for logging and debugging purposes
-   *
-   * @return {WebGLProgram} The compiled and linked shader program,
-   * or 'null' in case of failure
-   *
-   * @example 
-   * var myShader = setupShaders($.gl, "default-vertexshader", "filter-bilateral");
-   *
+   * Retrieves the GL program info log for the given program, or an
+   * error message if getProgramInfoLog is not supported (IE11).
    */
-  nokia.gl.setupShaders = function (gl, vertexShaderName, fragmentShaderName) {
-
-    var vsURI = "shaders/" + vertexShaderName + ".gl";
-    var fsURI = "shaders/" + fragmentShaderName + ".gl";
-  
-    var vertexShader = nokia.gl.setupShader(gl, gl.VERTEX_SHADER, vertexShaderName, vsURI);
-    var fragmentShader = nokia.gl.setupShader(gl, gl.FRAGMENT_SHADER, fragmentShaderName, fsURI);
-
-    if (!vertexShader || !fragmentShader) {
-      return null;
+  nokia.gl.getProgramInfoLog = function (program) {
+    var isIE = (navigator.appVersion.indexOf("Trident") != -1);
+    if (isIE) {
+      return "getProgramInfoLog disabled to support IE11.";
+    } else {
+      return nokia.gl.context.getProgramInfoLog(program);
     }
-
-    var program = gl.createProgram();
-    program.name = fragmentShaderName;
-
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-
-    var infoLog = gl.getProgramInfoLog(program);
-    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
-    
-    console.log("Shader linker info log: " + (infoLog ? infoLog : "<empty>"));
-    
-    return success ? program : null;
-  };
-
-  nokia.gl.setupShaderProgramAsync = function (gl, vertexShaderName, fragmentShaderName) {
-
-    var vsURI = "shaders/" + vertexShaderName + ".gl";
-    var fsURI = "shaders/" + fragmentShaderName + ".gl";
-
-    if (!nokia.gl.shaders[vertexShaderName]) {
-      nokia.gl.shaders[vertexShaderName] = nokia.gl.setupShader(gl, gl.VERTEX_SHADER, vertexShaderName, vsURI);
-    }
-
-    var callback = function (fragmentShaderSource) {
-
-      var shader = gl.createShader(gl.FRAGMENT_SHADER);
-      gl.shaderSource(shader, fragmentShaderSource);
-      gl.compileShader(shader);
-
-      var infoLog = gl.getShaderInfoLog(shader);
-      var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-      console.log("Shader compiler info log: " + (infoLog ? infoLog : "<empty>"));
-
-      var program = gl.createProgram();
-      program.name = fragmentShaderName;
-      gl.attachShader(program, nokia.gl.shaders["default-vertexshader"]);
-      gl.attachShader(program, shader);
-      gl.linkProgram(program);
-
-      infoLog = gl.getProgramInfoLog(program);
-      success = gl.getProgramParameter(program, gl.LINK_STATUS);
-      console.log("Shader linker info log: " + (infoLog ? infoLog : "<empty>"));
-
-      console.log("Successfully initialized ", fragmentShaderName);
-
-      nokia.gl.shaders[fragmentShaderName] = program;
-    };
-
-    nokia.utils.loadKernel(fragmentShaderName, fsURI, callback);
-  };
-
-  /**
-   * Called when the fragment shader source code becomes available.
-   * The vertex shader is assumed to be already available at
-   * nokia.gl.shaders["default-vertexshader"] in compiled form.
-   */
-  nokia.gl.shaderOnLoad = function (fragmentShaderName, fragmentShaderSource) {
-
-    var gl = nokia.gl.context;
-    var shader = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(shader, fragmentShaderSource);
-    gl.compileShader(shader);
-
-    var infoLog = gl.getShaderInfoLog(shader);
-    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-    console.log("Shader compiler info log: " + (infoLog ? infoLog : "<empty>"));
-
-    var program = gl.createProgram();
-    program.name = fragmentShaderName;
-    gl.attachShader(program, nokia.gl.shaders["default-vertexshader"]);
-    gl.attachShader(program, shader);
-    gl.linkProgram(program);
-
-    infoLog = gl.getProgramInfoLog(program);
-    success = gl.getProgramParameter(program, gl.LINK_STATUS);
-    console.log("Shader linker info log: " + (infoLog ? infoLog : "<empty>"));
-
-    console.log("Successfully initialized ", fragmentShaderName);
-
-    nokia.gl.shaders[fragmentShaderName] = program;
-  };
-
-  /**
-   * Loads and compiles the given vertex shader or fragment shader.
-   *
-   * @param {WebGLRenderingContext} gl the WebGL context to associate
-   * the shader with
-   *
-   * @param {GLenum} type <tt>gl.VERTEX_SHADER</tt> or
-   * <tt>gl.FRAGMENT_SHADER</tt>
-   *
-   * @param {String} id the ID of the DOM tree element that contains
-   * the shader source code
-   * 
-   * @param {String} uri the URI where to load the shader source
-   * code if it cannot be found from the DOM tree [optional]
-   *
-   * @return {WebGLShader} The compiled shader program, or 'null' in
-   * case of failure
-   */
-  nokia.gl.setupShader = function (gl, type, id, uri) {
-    var shader = gl.createShader(type);
-    var shaderSource = nokia.utils.loadKernel(id, uri);
-    
-    gl.shaderSource(shader, shaderSource);
-    gl.compileShader(shader);
-
-    var infoLog = gl.getShaderInfoLog(shader);
-    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-    console.log("Shader compiler info log: " + (infoLog ? infoLog : "<empty>"));
-
-    return success ? shader : null;
   };
 
   /**
@@ -544,8 +407,8 @@ goog.provide('nokia.gl');
    */
   nokia.gl.setupDefaultGeometry = function (gl) {
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ARRAY_BUFFER, new Int8Array([-1, -1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(0, 2, gl.BYTE, false, 0, 0);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(0);
 
     // DEBUG: Also create & bind an index buffer for debugging purposes.
@@ -656,7 +519,7 @@ goog.provide('nokia.gl');
       default: gl.uniform1fv(location, values); break;
       }
     } catch (e) {
-      console.log("  Warning: glSetUniformf failed to set uniform '" + name + "': " + e);
+      //console.log("  Warning: glSetUniformf failed to set uniform '" + name + "': " + e);
     }
   };
 
@@ -699,7 +562,7 @@ goog.provide('nokia.gl');
       default: throw new Error("Invalid number of parameters.");
       }
     } catch (e) {
-    console.log("  Warning: glSetUniformi failed to set uniform '" + name + "': " + e);
+      //console.log("  Warning: glSetUniformi failed to set uniform '" + name + "': " + e);
     }
   };
 

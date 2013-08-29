@@ -12,30 +12,34 @@
 
 /**
  * A generic filter kernel with statically configurable size and
- * dynamic weights.  The kernel size must be constant because WebGL
- * does not permit arrays to be indexed with non-constant values.
+ * dynamic weights.  The kernel size (currently set to 5x5) must be
+ * constant because WebGL does not permit arrays to be indexed with
+ * non-constant values.
  *
- * @param {uniform vec2} resolution
- * @param {uniform sampler2D} src
+ * @param {uniform vec2} resolution source texture size in pixels
+ * @param {uniform sampler2D} src the source texture
  * @param {uniform float[]} weights kernel weights in row-major order
  *
  * @author Tomi Aarnio, Nokia Research Tampere, 2011
  */
 
-#if defined(GL_ES)
-  precision mediump float;
-#endif
+precision mediump float;
 
-const int kernelWidth = 5;
-const int kernelHalfWidth = kernelWidth/2;
-const int kernelSize = kernelWidth * kernelWidth;
+// IE11 doesn't support 'const int' declarations outside of 'main()',
+// so we have to use old-fashioned #defines instead.
+
+#define KERNEL_WIDTH 5
+#define KERNEL_SIZE  KERNEL_WIDTH*KERNEL_WIDTH
 
 uniform vec2 resolution;
 uniform sampler2D src;
-uniform float weights[kernelSize];
+uniform float weights[KERNEL_SIZE];
 
 void main(void)
 {
+  const int kernelWidth = KERNEL_WIDTH;
+  const int kernelHalfWidth = kernelWidth/2;
+
   vec2 ooRes = vec2(1.0, 1.0) / resolution.xy;
   vec2 uv = gl_FragCoord.xy * ooRes;            // center pixel coordinates
   ooRes *= resolution.xy / 512.0;               // scale kernel sample locations according to image size

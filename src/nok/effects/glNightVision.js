@@ -43,7 +43,7 @@ goog.provide('nokia.effect.glNightVision');
    *
    ***********************/
 
-  var ENABLED = true;
+  var ENABLED = false;
   var effectName = "Night Vision";
   var kernelURI = "shaders/nightvision.gl";
   var self = nokia.effect.glNightVision;

@@ -31,23 +31,14 @@ uniform sampler2D src;
 uniform vec2 resolution;
 uniform vec3 hsv;
 
-const mat3 toHSV = mat3(0.299,  0.596,  0.211,
-                        0.587, -0.274, -0.523,
-                        0.114, -0.321,  0.311);
-
-const mat3 toRGB = mat3(1.000,  1.000,  1.000,
-                        0.956, -0.272, -1.107,
-                        0.621, -0.647,  1.705);
-
 void main(void)
 {
   vec2 tc = gl_FragCoord.xy / resolution.xy;
   vec3 orgColor = texture2D(src, vec2(tc.x, tc.y)).rgb;
 
-  float hue = hsv.x;
-
   // Adjust hue
 
+  float hue = hsv.x;
   float sinHue = sin(hue);
   float cosHue = cos(hue);
   mat3 rotateHue = mat3(1.0,     0.0,    0.0,
@@ -57,7 +48,6 @@ void main(void)
   // Adjust saturation
   
   float sat = hsv.y;
-
   mat3 saturate = mat3(1.0,  0.0,  0.0,
                        0.0,  sat,  0.0,
                        0.0,  0.0,  sat);
@@ -65,20 +55,25 @@ void main(void)
   // Adjust lightness
 
   float lit = hsv.z;
-
   mat3 lighten = mat3(lit,  0.0,  0.0,
                       0.0,  1.0,  0.0,
                       0.0,  0.0,  1.0);
 
 
-  // Composite
+  // HSV <-> RGB conversion color conversion matrices.
+  // IE11 Preview doesn't support 'const' declarations
+  // outside of main(), so we have to keep these here.
+
+  const mat3 toHSV = mat3(0.299,  0.596,  0.211,
+                          0.587, -0.274, -0.523,
+                          0.114, -0.321,  0.311);
+
+  const mat3 toRGB = mat3(1.000,  1.000,  1.000,
+                          0.956, -0.272, -1.107,
+                          0.621, -0.647,  1.705);
+
+  // RGB -> HSV -> rotateHue -> saturate -> lighten -> RGB
 
   vec3 rgb = toRGB * lighten * saturate * rotateHue * toHSV * orgColor;
   gl_FragColor = vec4(rgb, 1.0);
-
-  // Simple desaturate
-  //float luminance = dot(vec3(0.2, 0.7, 0.1), orgColor);
-  //vec3 desaturatedColor = vec3(luminance);
-  //vec3 newColor = mix(orgColor, desaturatedColor, alpha);
-  //gl_FragColor = vec4(newColor, 1.0);
 }

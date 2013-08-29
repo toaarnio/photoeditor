@@ -67,8 +67,10 @@ $(TARGET_JS): $(JQUERY_FILES) $(EFFECTS_FILES) $(UI_FILES) src/nok/*.js
 	head -10 src/jquery/50-jquery.mousewheel.min.js >> $@
 	head -25 src/goog/base.js >> $@
 
-#	python tools/calcdeps.py -f "--warning_level=QUIET" -f --define -f goog.DEBUG=false -p src -o compiled -c tools/compiler.jar $(INPUT_FILES) >> $@
-	python tools/calcdeps.py -f --define -f goog.DEBUG=false -p src -o compiled -c tools/compiler.jar $(INPUT_FILES) --output_file $(TARGET_JS)
+#	python tools/calcdeps.py -f "--warning_level=QUIET" -f --define -f goog.DEBUG=false -p src --output-mode compiled --compiler-jar tools/compiler.jar $(INPUT_FILES) >> $@
+	python tools/calcdeps.py --path=src --output_mode=compiled --compiler_flag="--warning_level=QUIET" --compiler_jar=tools/compiler.jar $(INPUT_FILES) >> $@
+
+#	python tools/calcdeps.py -f --define -f goog.DEBUG=false -p src -o compiled -c tools/compiler.jar $(INPUT_FILES) --output_file $(TARGET_JS)
 
 lint:
 	$(LINT)
@@ -84,9 +86,9 @@ shaders:
 	cp $(SHADER_SRC)/* $(SHADER_DST)/
 	chmod 755 $(SHADER_DST)/*
 
-debug: clean
+debug: clean deps
 	mkdir -p $(dir $(TARGET_JS))
-	python tools/calcdeps.py -f "--warning_level=QUIET" -p src -o script -c tools/compiler.jar $(INPUT_FILES) --output_file $(TARGET_JS)
+	python tools/calcdeps.py --path=src --output_mode=script --compiler_flag="--warning_level=QUIET" --compiler_jar=tools/compiler.jar $(INPUT_FILES) --output_file=$(TARGET_JS)
 	make -f Makefile.htdocs debug
 	mv $(TARGET_HTDOCS)/index-min.html $(TARGET_HTDOCS)/index.html
 	cp -r $(CGI_SRC) $(CGI_DST)

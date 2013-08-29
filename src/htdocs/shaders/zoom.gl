@@ -31,12 +31,16 @@ uniform sampler2D src;
 void main(void)
 {
   vec2 tc = gl_FragCoord.xy * zoom.xy + zoom.zw;
+  vec3 clr = texture2D(src, tc).rgb;
 
   // When zoomed in far enough, display a thumbnail of the full image
-  // in the lower-left corner of the canvas.
+  // in the lower-left corner of the canvas. NB! This does not work
+  // on IE11 and is not terribly useful anyway, so it's disabled for
+  // the time being.
 
-  bool inside = false;
+  /*
   if (gl_FragCoord.x < resolution.z && gl_FragCoord.y < resolution.w) {
+    bool inside = false;
     vec2 zoomWindowSize = zoom.xy * resolution.xy;
     vec2 zoomWindowLL = zoom.zw;
     vec2 zoomWindowUR = zoomWindowLL + zoomWindowSize;
@@ -44,9 +48,9 @@ void main(void)
       tc = gl_FragCoord.xy / resolution.zw;
       inside = all(bvec4(greaterThan(tc, zoomWindowLL), lessThan(tc, zoomWindowUR)));
     }
+    clr = inside ? vec3(1.0)-clr : clr;    // film negative style
   } 
+  */
 
-  vec3 clr = texture2D(src, tc).rgb;
-  clr = inside ? vec3(1.0)-clr : clr;    // film negative style
   gl_FragColor = vec4(clr, 1.0);
 }
