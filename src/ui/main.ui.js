@@ -390,7 +390,7 @@
     aboutButton.text('About');
     aboutButton.button();
     aboutButton.click(function() {
-      window.location = '/demos.html';
+      window.open('/demos.html', '_blank');
     });
 
     topButtonContainer.buttonset();
