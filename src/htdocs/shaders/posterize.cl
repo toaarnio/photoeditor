@@ -322,6 +322,10 @@ kernel void classifyPixels(global ushort* labels,
   int2 mn = max(searchGrid.s01, (int2)(0, 0));
   int2 mx = min(searchGrid.s23, (int2)(clustersPerRow-1, clustersPerCol-1));
 
+  // DEBUG
+  mn = (int2)(0, 0);
+  mx = (int2)(clustersPerRow-1, clustersPerCol-1);
+
   // Compute S and m
 
   float S = sqrt(1.0f/numClusters);

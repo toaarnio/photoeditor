@@ -132,11 +132,11 @@ goog.provide('nokia.effect.clPosterize');
    * Releases the CL resources allocated by this Effect.
    */
   self.uninitCL = function() {
-    self.buffers.srcRGB.releaseCLResources();
-    self.buffers.dstRGB.releaseCLResources();
-    self.buffers.srcLAB.releaseCLResources();
-    self.buffers.labels.releaseCLResources();
-    self.buffers.clusters.releaseCLResources();
+    self.buffers.srcRGB.release();
+    self.buffers.dstRGB.release();
+    self.buffers.srcLAB.release();
+    self.buffers.labels.release();
+    self.buffers.clusters.release();
   };
 
   /**
@@ -158,8 +158,8 @@ goog.provide('nokia.effect.clPosterize');
     var numClusters = self.clusterLayout.numClusters;
     var clustersPerRow = self.clusterLayout.clustersPerRow;
     var clustersPerCol = self.clusterLayout.clustersPerCol;
-    var clusterWidth = self.clusterLayout.clusterWidth;
-    var clusterHeight = self.clusterLayout.clusterHeight;
+    var clusterWidth = width; // self.clusterLayout.clusterWidth;
+    var clusterHeight = height; // self.clusterLayout.clusterHeight;
     console.log("numClusters vs. numColors:" + numClusters + ", " + numColors);
 
     // Get kernel objects
@@ -181,52 +181,67 @@ goog.provide('nokia.effect.clPosterize');
 
     // Set kernel args
 
+    function ui32(value) {
+      if (!self.ui32) {
+        console.log("creating new Uint32Array for setArg");
+      }
+      self.ui32 = self.ui32 || new Uint32Array(1);
+      self.ui32[0] = value;
+      return self.ui32;
+    }
+
+    function f32(value) {
+      self.f32 = self.f32 || new Float32Array(1);
+      self.f32[0] = value;
+      return self.f32;
+    }
+
     rgb2lab.setArg(0, srcLAB);
     rgb2lab.setArg(1, srcRGB);
-    rgb2lab.setArg(2, width, WebCL.types.UINT);
-    rgb2lab.setArg(3, height, WebCL.types.UINT);
+    rgb2lab.setArg(2, ui32(width));
+    rgb2lab.setArg(3, ui32(height));
     
     initializeLabels.setArg(0, labels);
-    initializeLabels.setArg(1, width, WebCL.types.UINT);
-    initializeLabels.setArg(2, height, WebCL.types.UINT);
-    initializeLabels.setArg(3, clustersPerRow, WebCL.types.UINT);
-    initializeLabels.setArg(4, clustersPerCol, WebCL.types.UINT);
-    initializeLabels.setArg(5, numClusters, WebCL.types.UINT);
+    initializeLabels.setArg(1, ui32(width));
+    initializeLabels.setArg(2, ui32(height));
+    initializeLabels.setArg(3, ui32(clustersPerRow));
+    initializeLabels.setArg(4, ui32(clustersPerCol));
+    initializeLabels.setArg(5, ui32(numClusters));
 
     repositionClusters.setArg(0, clusters);
     repositionClusters.setArg(1, srcLAB);
     repositionClusters.setArg(2, labels);
-    repositionClusters.setArg(3, width, WebCL.types.UINT);
-    repositionClusters.setArg(4, height, WebCL.types.UINT);
-    repositionClusters.setArg(5, clusterWidth, WebCL.types.FLOAT);
-    repositionClusters.setArg(6, clusterHeight, WebCL.types.FLOAT);
-    repositionClusters.setArg(7, numClusters, WebCL.types.UINT);
+    repositionClusters.setArg(3, ui32(width));
+    repositionClusters.setArg(4, ui32(height));
+    repositionClusters.setArg(5, f32(clusterWidth));
+    repositionClusters.setArg(6, f32(clusterHeight));
+    repositionClusters.setArg(7, ui32(numClusters));
 
     classifyPixels.setArg(0, labels);
     classifyPixels.setArg(1, srcLAB);
     classifyPixels.setArg(2, clusters);
-    classifyPixels.setArg(3, 0.9 /*colorWeight */, WebCL.types.FLOAT);
-    classifyPixels.setArg(4, width, WebCL.types.UINT);
-    classifyPixels.setArg(5, height, WebCL.types.UINT);
-    classifyPixels.setArg(6, clustersPerRow, WebCL.types.UINT);
-    classifyPixels.setArg(7, clustersPerCol, WebCL.types.UINT);
-    classifyPixels.setArg(8, numClusters, WebCL.types.UINT);
+    classifyPixels.setArg(3, f32(0.99)); // colorWeight
+    classifyPixels.setArg(4, ui32(width));
+    classifyPixels.setArg(5, ui32(height));
+    classifyPixels.setArg(6, ui32(clustersPerRow));
+    classifyPixels.setArg(7, ui32(clustersPerCol));
+    classifyPixels.setArg(8, ui32(numClusters));
 
     visualizeClusters.setArg(0, dstRGB);
     visualizeClusters.setArg(1, srcRGB);
     visualizeClusters.setArg(2, clusters);
     visualizeClusters.setArg(3, labels);
-    visualizeClusters.setArg(4, width, WebCL.types.UINT);
-    visualizeClusters.setArg(5, height, WebCL.types.UINT);
+    visualizeClusters.setArg(4, ui32(width));
+    visualizeClusters.setArg(5, ui32(height));
 
     debugClusters.setArg(0, clusters);
     debugClusters.setArg(1, srcRGB);
     debugClusters.setArg(2, labels);
-    debugClusters.setArg(3, width, WebCL.types.UINT);
-    debugClusters.setArg(4, height, WebCL.types.UINT);
-    debugClusters.setArg(5, clustersPerRow, WebCL.types.UINT);
-    debugClusters.setArg(6, clustersPerCol, WebCL.types.UINT);
-    debugClusters.setArg(7, numClusters, WebCL.types.UINT);
+    debugClusters.setArg(3, ui32(width));
+    debugClusters.setArg(4, ui32(height));
+    debugClusters.setArg(5, ui32(clustersPerRow));
+    debugClusters.setArg(6, ui32(clustersPerCol));
+    debugClusters.setArg(7, ui32(numClusters));
 
     // Execute and draw
     
