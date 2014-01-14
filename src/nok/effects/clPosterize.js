@@ -183,7 +183,7 @@ goog.provide('nokia.effect.clPosterize');
 
     function ui32(value) {
       if (!self.ui32) {
-        console.log("creating new Uint32Array for setArg");
+        console.log("creating new Uint32Array(1) for setArg");
       }
       self.ui32 = self.ui32 || new Uint32Array(1);
       self.ui32[0] = value;
@@ -191,6 +191,9 @@ goog.provide('nokia.effect.clPosterize');
     }
 
     function f32(value) {
+      if (!self.f32) {
+        console.log("creating new Float32Array(1) for setArg");
+      }
       self.f32 = self.f32 || new Float32Array(1);
       self.f32[0] = value;
       return self.f32;
@@ -220,7 +223,7 @@ goog.provide('nokia.effect.clPosterize');
     classifyPixels.setArg(0, labels);
     classifyPixels.setArg(1, srcLAB);
     classifyPixels.setArg(2, clusters);
-    classifyPixels.setArg(3, f32(0.99)); // colorWeight
+    classifyPixels.setArg(3, f32(0.5)); // colorWeight
     classifyPixels.setArg(4, ui32(width));
     classifyPixels.setArg(5, ui32(height));
     classifyPixels.setArg(6, ui32(clustersPerRow));
@@ -246,14 +249,14 @@ goog.provide('nokia.effect.clPosterize');
     // Execute and draw
     
     queue.enqueueWriteBuffer(clusters, false, 0, numClusters*8*4, self.clusters, []);
-    queue.enqueueNDRangeKernel(rgb2lab, 2, [], [width, height], [], []);
-    queue.enqueueNDRangeKernel(initializeLabels, 2, [], [width, height], [], []);
+    queue.enqueueNDRangeKernel(rgb2lab, 2, [0, 0], [width, height], [1, 1], []);
+    queue.enqueueNDRangeKernel(initializeLabels, 2, [0, 0], [width, height], [1, 1], []);
     if (ITER === 0) {
-      queue.enqueueNDRangeKernel(debugClusters, 1, [], [numClusters], [], []);
+      queue.enqueueNDRangeKernel(debugClusters, 1, [0], [numClusters], [1], []);
     } else {
       for (var i=0; i < ITER; i++) {
-        queue.enqueueNDRangeKernel(classifyPixels, 2, [], [width, height], [], []);
-        queue.enqueueNDRangeKernel(repositionClusters, 1, [], [numClusters], [], []);
+        queue.enqueueNDRangeKernel(classifyPixels, 2, [0, 0], [width, height], [1, 1], []);
+        queue.enqueueNDRangeKernel(repositionClusters, 1, [0], [numClusters], [1], []);
       }
     }
 
@@ -267,7 +270,7 @@ goog.provide('nokia.effect.clPosterize');
     }
     */
 
-    queue.enqueueNDRangeKernel(visualizeClusters, 2, [], [width, height], [], []);
+    queue.enqueueNDRangeKernel(visualizeClusters, 2, [0, 0], [width, height], [1, 1], []);
     queue.enqueueReadBuffer(dstRGB, true, 0, nokia.cl.dataOut.byteLength, nokia.cl.dataOut, []);
     queue.finish();
 
