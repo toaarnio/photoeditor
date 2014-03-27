@@ -85,16 +85,16 @@ goog.provide('nokia.cl');
 	  // Note that there may be multiple OpenCL platforms in a system, for
 	  // example a GPU driver from NVIDIA and a CPU implementation by AMD.
 	
-	  var platforms = WebCL.getPlatformIDs();
-	  var deviceType = WebCL.CL_DEVICE_TYPE_DEFAULT;
+	  var platforms = webcl.getPlatforms();
+	  var deviceType = WebCL.DEVICE_TYPE_DEFAULT;
     for (var i=0; i < platforms.length; i++) {
       try {
         var platform = platforms[i];
-        var platformName = platform.getPlatformInfo(WebCL.CL_PLATFORM_NAME);
+        var platformName = platform.getInfo(WebCL.PLATFORM_NAME);
         console.log("nokia.cl.createContext: " + platformName + " OpenCL driver.");
         nokia.cl.platformNames[i] = platformName;
-	      nokia.cl.devices[i] = platform.getDeviceIDs(deviceType)[0];  // first device of every platform
-	      nokia.cl.contexts[i] = WebCL.createContextFromType([WebCL.CL_CONTEXT_PLATFORM, platform], deviceType);
+	      nokia.cl.devices[i] = platform.getDevices(deviceType)[0];  // first device of every platform
+	      nokia.cl.contexts[i] = webcl.createContext(deviceType);
         nokia.cl.cmdQueues[i] = nokia.cl.contexts[i].createCommandQueue(nokia.cl.devices[i], 0);
         nokia.cl.numContexts++;
       } catch (e) {
@@ -169,23 +169,23 @@ goog.provide('nokia.cl');
 
     var cl = nokia.cl.context;
     var device = nokia.cl.device;
-    var program = cl.createProgramWithSource(kernelSrc);
+    var program = cl.createProgram(kernelSrc);
     
     try {
-      program.buildProgram([device], "-Werror -cl-fast-relaxed-math");
+      program.build([device], "-Werror -cl-fast-relaxed-math");
       kernels = program.createKernelsInProgram();
     } catch (e) {}
 
-    var buildStatus = program.getProgramBuildInfo(device, WebCL.CL_PROGRAM_BUILD_STATUS);
-    var buildOK = (buildStatus == WebCL.CL_SUCCESS);
+    var buildStatus = program.getBuildInfo(device, WebCL.PROGRAM_BUILD_STATUS);
+    var buildOK = (buildStatus == WebCL.SUCCESS);
 
     nokia.utils.Timer.elapsed("nokia.cl.buildKernel", true);
 
     if (!buildOK) {
       var deviceName = device.
-        getDeviceInfo(WebCL.CL_DEVICE_PLATFORM).
-        getPlatformInfo(WebCL.CL_PLATFORM_NAME);
-      var buildLog = program.getProgramBuildInfo(device, WebCL.CL_PROGRAM_BUILD_LOG);
+        getInfo(WebCL.DEVICE_PLATFORM).
+        getInfo(WebCL.PLATFORM_NAME);
+      var buildLog = program.getBuildInfo(device, WebCL.PROGRAM_BUILD_LOG);
       var errMsg = "Failed to build WebCL program for "+deviceName+". Error " + 
             buildStatus + ": " + buildLog;
       alert(errMsg);
@@ -198,7 +198,7 @@ goog.provide('nokia.cl');
 
     for (var i=0; i < kernels.length; i++) {
       var kernel = kernels[i];
-      var name = kernel.getKernelInfo(WebCL.CL_KERNEL_FUNCTION_NAME);
+      var name = kernel.getInfo(WebCL.KERNEL_FUNCTION_NAME);
       nokia.cl.kernels[nokia.cl.ctxIndex][name] = kernel;
     }
 
@@ -224,10 +224,10 @@ goog.provide('nokia.cl');
    * parameters.  This function must be called after setupImage().
    */
   nokia.cl.setupKernelArgs = function (kernel) {
-    kernel.setKernelArg(0, nokia.cl.bufIn);
-    kernel.setKernelArg(1, nokia.cl.bufOut);
-    kernel.setKernelArg(2, nokia.cl.width, WebCL.types.UINT);
-    kernel.setKernelArg(3, nokia.cl.height, WebCL.types.UINT);
+    kernel.setArg(0, nokia.cl.bufIn);
+    kernel.setArg(1, nokia.cl.bufOut);
+    kernel.setArg(2, new Uint32Array([nokia.cl.width]));
+    kernel.setArg(3, new Uint32Array([nokia.cl.height]));
     nokia.cl.firstFreeArgIndex = 4;
   };
 
@@ -252,9 +252,9 @@ goog.provide('nokia.cl');
 
     // Explicitly release all CL buffers before creating new ones
 
-    if (cl.bufIn !== null && cl.bufIn.releaseCLResources) {
-      cl.bufIn.releaseCLResources();
-      cl.bufOut.releaseCLResources();
+    if (cl.bufIn !== null && cl.bufIn.release) {
+      cl.bufIn.release();
+      cl.bufOut.release();
     }
 
     // At this point we know the image dimensions, so let's allocate
@@ -264,14 +264,13 @@ goog.provide('nokia.cl');
  
     var bufSize = srcCanvas.width * srcCanvas.height * 4;
     if (useTexture) {
-      var imgFormat = { channelOrder : WebCL.CL_RGBA, channelDataType : WebCL.CL_UNORM_INT8 };
-      cl.bufIn = ctx.createImage2D(WebCL.CL_MEM_READ_ONLY, imgFormat, 
-                                   srcCanvas.width, srcCanvas.height, 0);
+      var descriptor = { channelOrder : WebCL.RGBA, channelType : WebCL.UNORM_INT8, width: srcCanvas.width, height: srcCanvas.height };
+      cl.bufIn = ctx.createImage(WebCL.MEM_READ_ONLY, descriptor);
     } else {
-      cl.bufIn = ctx.createBuffer(WebCL.CL_MEM_READ_ONLY, bufSize);
+      cl.bufIn = ctx.createBuffer(WebCL.MEM_READ_ONLY, bufSize);
     }
-    cl.bufOut = ctx.createBuffer(WebCL.CL_MEM_WRITE_ONLY, bufSize);
-    cl.bufTmp = ctx.createBuffer(WebCL.CL_MEM_READ_WRITE, bufSize/2);  // HACK HACK
+    cl.bufOut = ctx.createBuffer(WebCL.MEM_WRITE_ONLY, bufSize);
+    cl.bufTmp = ctx.createBuffer(WebCL.MEM_READ_WRITE, bufSize/2);  // HACK HACK
     cl.dataOut = new Uint8Array(bufSize);
     cl.dataIn = new Uint8Array(bufSize);
     nokia.utils.Timer.start("  Canvas3D -> Uint8Array (gl.readPixels)");
@@ -285,11 +284,11 @@ goog.provide('nokia.cl');
 
     if (useTexture) {
       nokia.utils.Timer.start("  Uint8Array -> CL Image (cl.enqueueWriteImage)");
-      cl.cmdQueue.enqueueWriteImage(cl.bufIn, true, [0, 0, 0], [cl.width, cl.height, 1], 0, 0, cl.dataIn, []);
+      cl.cmdQueue.enqueueWriteImage(cl.bufIn, true, [0, 0], [cl.width, cl.height], 0, cl.dataIn);
       nokia.utils.Timer.elapsed("  Uint8Array -> CL Image (cl.enqueueWriteImage)", true);
     } else {
       nokia.utils.Timer.start("  Uint8Array -> CL Buffer (cl.enqueueWriteBuffer)");
-      cl.cmdQueue.enqueueWriteBuffer(cl.bufIn, true, 0, cl.dataIn.length, cl.dataIn, []);
+      cl.cmdQueue.enqueueWriteBuffer(cl.bufIn, true, 0, cl.dataIn.length, cl.dataIn);
       nokia.utils.Timer.elapsed("  Uint8Array -> CL Buffer (cl.enqueueWriteBuffer)", true);
     }
   };
@@ -306,20 +305,15 @@ goog.provide('nokia.cl');
 
     var argIndex = nokia.cl.firstFreeArgIndex;
     for (var name in args) {
-      var argValue = args[name][0];
-      var argType = args[name][1];
-      if (argType == "LOCAL") {
-        kernel.setKernelArgLocal(argIndex, argValue);
-      } else {
-        kernel.setKernelArg(argIndex, argValue, argType);
-      }
+      var argValue = args[name];
+      kernel.setArg(argIndex, argValue);
       argIndex++;
     }
     
     var cl = nokia.cl;
     var cmdQueue = cl.cmdQueue;
     //nokia.utils.Timer.start("  CL kernel execution + readBuffer");
-    cmdQueue.enqueueNDRangeKernel(kernel, 2, [], [cl.width, cl.height], [], []);
+    cmdQueue.enqueueNDRangeKernel(kernel, 2, null, [cl.width, cl.height]);
     nokia.cl.enqueueRead(cl.bufOut, cl.dataOut);
     cmdQueue.finish();
     //nokia.utils.Timer.elapsed("  CL kernel execution + readBuffer", true);
@@ -332,19 +326,14 @@ goog.provide('nokia.cl');
   nokia.cl.enqueueKernel = function(kernel, args) {
     var argIndex = nokia.cl.firstFreeArgIndex;
     for (var name in args) {
-      var argValue = args[name][0];
-      var argType = args[name][1];
-      if (argType == "LOCAL") {
-        kernel.setKernelArgLocal(argIndex, argValue);
-      } else {
-        kernel.setKernelArg(argIndex, argValue, argType);
-      }
+      var argValue = args[name];
+      kernel.setArg(argIndex, argValue);
       argIndex++;
     }
     
     var cl = nokia.cl;
     var cmdQueue = cl.cmdQueue;
-    cmdQueue.enqueueNDRangeKernel(kernel, 2, [], [cl.width, cl.height], [], []);
+    cmdQueue.enqueueNDRangeKernel(kernel, 2, null, [cl.width, cl.height]);
   };
 
   /**
@@ -353,7 +342,7 @@ goog.provide('nokia.cl');
   nokia.cl.enqueueReadBuffer = function enqueueReadBuffer() {
     var cl = nokia.cl;
     var cmdQueue = cl.cmdQueue;
-    cmdQueue.enqueueReadBuffer(cl.bufOut, false, 0, cl.dataOut.length, cl.dataOut, []); 
+    cmdQueue.enqueueReadBuffer(cl.bufOut, false, 0, cl.dataOut.length, cl.dataOut); 
     cmdQueue.finish();
   };
 
@@ -366,20 +355,19 @@ goog.provide('nokia.cl');
   nokia.cl.enqueueRead = function enqueueRead(srcMemObject, dstArrayBufferView) {
     var cl = nokia.cl;
     var cmdQueue = cl.cmdQueue;
-    var memType = srcMemObject.getMemObjectInfo(WebCL.CL_MEM_TYPE);
-    var isBuffer = (memType === WebCL.CL_MEM_OBJECT_BUFFER);
-    var isImage = (memType === WebCL.CL_MEM_OBJECT_IMAGE2D);
+    var memType = srcMemObject.getInfo(WebCL.MEM_TYPE);
+    var isBuffer = (memType === WebCL.MEM_OBJECT_BUFFER);
+    var isImage = (memType === WebCL.MEM_OBJECT_IMAGE2D);
     
     if (isBuffer) {
-      var numBytes = srcMemObject.getMemObjectInfo(WebCL.CL_MEM_SIZE);
-      cmdQueue.enqueueReadBuffer(srcMemObject, false, 0, numBytes, dstArrayBufferView, []);
+      var numBytes = srcMemObject.getInfo(WebCL.MEM_SIZE);
+      cmdQueue.enqueueReadBuffer(srcMemObject, false, 0, numBytes, dstArrayBufferView);
     }
 
     if (isImage) {
-      var w = srcMemObject.getImageInfo(WebCL.CL_IMAGE_WIDTH);
-      var h = srcMemObject.getImageInfo(WebCL.CL_IMAGE_HEIGHT);
-      var bpp = srcMemObject.getImageInfo(WebCL.CL_IMAGE_ELEMENT_SIZE);
-      cmdQueue.enqueueReadImage(srcMemObject, false, [0,0,0], [w,h,1], 0, 0, dstArrayBufferView, []);
+      var w = srcMemObject.getInfo().width;
+      var h = srcMemObject.getInfo().height;
+      cmdQueue.enqueueReadImage(srcMemObject, false, [0,0], [w,h], 0, dstArrayBufferView);
     }
   };
 
@@ -391,20 +379,19 @@ goog.provide('nokia.cl');
   nokia.cl.enqueueWrite = function enqueueWrite(dstMemObject, srcArrayBufferView) {
     var cl = nokia.cl;
     var cmdQueue = cl.cmdQueue;
-    var memType = dstMemObject.getMemObjectInfo(WebCL.CL_MEM_TYPE);
-    var isBuffer = (memType === WebCL.CL_MEM_OBJECT_BUFFER);
-    var isImage = (memType === WebCL.CL_MEM_OBJECT_IMAGE2D);
+    var memType = dstMemObject.getMemObjectInfo(WebCL.MEM_TYPE);
+    var isBuffer = (memType === WebCL.MEM_OBJECT_BUFFER);
+    var isImage = (memType === WebCL.MEM_OBJECT_IMAGE2D);
 
     if (isBuffer) {
-      var numBytes = dstMemObject.getMemObjectInfo(WebCL.CL_MEM_SIZE);
-      cmdQueue.enqueueWriteBuffer(dstMemObject, false, 0, numBytes, srcArrayBufferView, []);
+      var numBytes = dstMemObject.getMemObjectInfo(WebCL.MEM_SIZE);
+      cmdQueue.enqueueWriteBuffer(dstMemObject, false, 0, numBytes, srcArrayBufferView);
     }
 
     if (isImage) {
-      var w = dstMemObject.getImageInfo(WebCL.CL_IMAGE_WIDTH);
-      var h = dstMemObject.getImageInfo(WebCL.CL_IMAGE_HEIGHT);
-      var bpp = dstMemObject.getImageInfo(WebCL.CL_IMAGE_ELEMENT_SIZE);
-      cmdQueue.enqueueWriteImage(dstMemObject, false, [0,0,0], [w,h,1], 0, 0, srcArrayBufferView, []);
+      var w = srcMemObject.getInfo().width;
+      var h = srcMemObject.getInfo().height;
+      cmdQueue.enqueueWriteImage(dstMemObject, false, [0,0], [w,h], 0, srcArrayBufferView);
     }
   };
 
