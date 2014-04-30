@@ -94,7 +94,7 @@ goog.provide('nokia.cl');
         console.log("nokia.cl.createContext: " + platformName + " OpenCL driver.");
         nokia.cl.platformNames[i] = platformName;
 	      nokia.cl.devices[i] = platform.getDevices(deviceType)[0];  // first device of every platform
-	      nokia.cl.contexts[i] = webcl.createContext(deviceType);
+	      nokia.cl.contexts[i] = webcl.createContext(nokia.cl.devices[i]);
         nokia.cl.cmdQueues[i] = nokia.cl.contexts[i].createCommandQueue(nokia.cl.devices[i], 0);
         nokia.cl.numContexts++;
       } catch (e) {
