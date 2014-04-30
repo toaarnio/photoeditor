@@ -124,7 +124,7 @@ goog.provide('nokia.effect.clSobel');
     //console.log("  threshold = ", threshold, ", relative = ", relThreshold);
 
     console.log("  threshold = ", threshold);
-    var dynamicArgs = { "threshold" : [threshold, WebCL.types.FLOAT] };
+    var dynamicArgs = { "threshold" : new Float32Array([threshold]) };
                         
     var kernel = nokia.cl.kernels[nokia.cl.ctxIndex][kernelName];
 

@@ -85,15 +85,16 @@ goog.provide('nokia.cl');
 	  // Note that there may be multiple OpenCL platforms in a system, for
 	  // example a GPU driver from NVIDIA and a CPU implementation by AMD.
 	
-	  var platforms = WebCL.getPlatforms();
+	  var platforms = webcl.getPlatforms();
+	  var deviceType = WebCL.DEVICE_TYPE_DEFAULT;
     for (var i=0; i < platforms.length; i++) {
       try {
         var platform = platforms[i];
         var platformName = platform.getInfo(WebCL.PLATFORM_NAME);
         console.log("nokia.cl.createContext: " + platformName + " OpenCL driver.");
         nokia.cl.platformNames[i] = platformName;
-	      nokia.cl.devices[i] = platform.getDevices()[0];  // first device of every platform
-	      nokia.cl.contexts[i] = WebCL.createContext({ platform: platform, deviceType: WebCL.DEVICE_TYPE_DEFAULT });
+	      nokia.cl.devices[i] = platform.getDevices(deviceType)[0];  // first device of every platform
+	      nokia.cl.contexts[i] = webcl.createContext(deviceType);
         nokia.cl.cmdQueues[i] = nokia.cl.contexts[i].createCommandQueue(nokia.cl.devices[i], 0);
         nokia.cl.numContexts++;
       } catch (e) {
@@ -263,9 +264,8 @@ goog.provide('nokia.cl');
  
     var bufSize = srcCanvas.width * srcCanvas.height * 4;
     if (useTexture) {
-      var imgFormat = { channelOrder : WebCL.RGBA, channelDataType : WebCL.UNORM_INT8 };
-      cl.bufIn = ctx.createImage2D(WebCL.MEM_READ_ONLY, imgFormat, 
-                                   srcCanvas.width, srcCanvas.height, 0);
+      var descriptor = { channelOrder : WebCL.RGBA, channelType : WebCL.UNORM_INT8, width: srcCanvas.width, height: srcCanvas.height };
+      cl.bufIn = ctx.createImage(WebCL.MEM_READ_ONLY, descriptor);
     } else {
       cl.bufIn = ctx.createBuffer(WebCL.MEM_READ_ONLY, bufSize);
     }
@@ -284,11 +284,11 @@ goog.provide('nokia.cl');
 
     if (useTexture) {
       nokia.utils.Timer.start("  Uint8Array -> CL Image (cl.enqueueWriteImage)");
-      cl.cmdQueue.enqueueWriteImage(cl.bufIn, true, [0, 0, 0], [cl.width, cl.height, 1], 0, 0, cl.dataIn, []);
+      cl.cmdQueue.enqueueWriteImage(cl.bufIn, true, [0, 0], [cl.width, cl.height], 0, cl.dataIn);
       nokia.utils.Timer.elapsed("  Uint8Array -> CL Image (cl.enqueueWriteImage)", true);
     } else {
       nokia.utils.Timer.start("  Uint8Array -> CL Buffer (cl.enqueueWriteBuffer)");
-      cl.cmdQueue.enqueueWriteBuffer(cl.bufIn, true, 0, cl.dataIn.length, cl.dataIn, []);
+      cl.cmdQueue.enqueueWriteBuffer(cl.bufIn, true, 0, cl.dataIn.length, cl.dataIn);
       nokia.utils.Timer.elapsed("  Uint8Array -> CL Buffer (cl.enqueueWriteBuffer)", true);
     }
   };
@@ -305,20 +305,15 @@ goog.provide('nokia.cl');
 
     var argIndex = nokia.cl.firstFreeArgIndex;
     for (var name in args) {
-      var argValue = args[name][0];
-      var argType = args[name][1];
-      if (argType == "LOCAL") {
-        kernel.setKernelArgLocal(argIndex, argValue);
-      } else {
-        kernel.setKernelArg(argIndex, argValue, argType);
-      }
+      var argValue = args[name];
+      kernel.setArg(argIndex, argValue);
       argIndex++;
     }
     
     var cl = nokia.cl;
     var cmdQueue = cl.cmdQueue;
     //nokia.utils.Timer.start("  CL kernel execution + readBuffer");
-    cmdQueue.enqueueNDRangeKernel(kernel, 2, [], [cl.width, cl.height], [], []);
+    cmdQueue.enqueueNDRangeKernel(kernel, 2, null, [cl.width, cl.height]);
     nokia.cl.enqueueRead(cl.bufOut, cl.dataOut);
     cmdQueue.finish();
     //nokia.utils.Timer.elapsed("  CL kernel execution + readBuffer", true);
@@ -331,19 +326,14 @@ goog.provide('nokia.cl');
   nokia.cl.enqueueKernel = function(kernel, args) {
     var argIndex = nokia.cl.firstFreeArgIndex;
     for (var name in args) {
-      var argValue = args[name][0];
-      var argType = args[name][1];
-      if (argType == "LOCAL") {
-        kernel.setKernelArgLocal(argIndex, argValue);
-      } else {
-        kernel.setKernelArg(argIndex, argValue, argType);
-      }
+      var argValue = args[name];
+      kernel.setArg(argIndex, argValue);
       argIndex++;
     }
     
     var cl = nokia.cl;
     var cmdQueue = cl.cmdQueue;
-    cmdQueue.enqueueNDRangeKernel(kernel, 2, [], [cl.width, cl.height], [], []);
+    cmdQueue.enqueueNDRangeKernel(kernel, 2, null, [cl.width, cl.height]);
   };
 
   /**
@@ -352,7 +342,7 @@ goog.provide('nokia.cl');
   nokia.cl.enqueueReadBuffer = function enqueueReadBuffer() {
     var cl = nokia.cl;
     var cmdQueue = cl.cmdQueue;
-    cmdQueue.enqueueReadBuffer(cl.bufOut, false, 0, cl.dataOut.length, cl.dataOut, []); 
+    cmdQueue.enqueueReadBuffer(cl.bufOut, false, 0, cl.dataOut.length, cl.dataOut); 
     cmdQueue.finish();
   };
 
@@ -371,14 +361,13 @@ goog.provide('nokia.cl');
     
     if (isBuffer) {
       var numBytes = srcMemObject.getInfo(WebCL.MEM_SIZE);
-      cmdQueue.enqueueReadBuffer(srcMemObject, false, 0, numBytes, dstArrayBufferView, []);
+      cmdQueue.enqueueReadBuffer(srcMemObject, false, 0, numBytes, dstArrayBufferView);
     }
 
     if (isImage) {
-      var w = srcMemObject.getImageInfo(WebCL.IMAGE_WIDTH);
-      var h = srcMemObject.getImageInfo(WebCL.IMAGE_HEIGHT);
-      var bpp = srcMemObject.getImageInfo(WebCL.IMAGE_ELEMENT_SIZE);
-      cmdQueue.enqueueReadImage(srcMemObject, false, [0,0,0], [w,h,1], 0, 0, dstArrayBufferView, []);
+      var w = srcMemObject.getInfo().width;
+      var h = srcMemObject.getInfo().height;
+      cmdQueue.enqueueReadImage(srcMemObject, false, [0,0], [w,h], 0, dstArrayBufferView);
     }
   };
 
@@ -396,14 +385,14 @@ goog.provide('nokia.cl');
 
     if (isBuffer) {
       var numBytes = dstMemObject.getInfo(WebCL.MEM_SIZE);
-      cmdQueue.enqueueWriteBuffer(dstMemObject, false, 0, numBytes, srcArrayBufferView, []);
+      cmdQueue.enqueueWriteBuffer(dstMemObject, false, 0, numBytes, srcArrayBufferView);
     }
 
     if (isImage) {
       var w = dstMemObject.getImageInfo(WebCL.IMAGE_WIDTH);
       var h = dstMemObject.getImageInfo(WebCL.IMAGE_HEIGHT);
       var bpp = dstMemObject.getImageInfo(WebCL.IMAGE_ELEMENT_SIZE);
-      cmdQueue.enqueueWriteImage(dstMemObject, false, [0,0,0], [w,h,1], 0, 0, srcArrayBufferView, []);
+      cmdQueue.enqueueWriteImage(dstMemObject, false, [0,0,0], [w,h,1], 0, 0, srcArrayBufferView);
     }
   };
 
